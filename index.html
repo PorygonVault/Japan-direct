@@ -305,6 +305,7 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
         <button class="chip" data-atab="clients" aria-pressed="false">Réservations</button>
         <button class="chip" data-atab="groupes" aria-pressed="false">Commandes groupées</button>
         <button class="chip" data-atab="lives" aria-pressed="false">Lives</button>
+        <button class="chip" data-atab="overlay" aria-pressed="false">Overlay stream</button>
       </div>
 
       <!-- Offres -->
@@ -371,6 +372,44 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
           <button class="btn red" type="submit" style="margin-top:12px;width:100%">Créer</button>
         </form>
         <div class="rows" id="adminGroups"></div>
+      </div>
+
+      <!-- Overlay stream -->
+      <div data-apane="overlay" class="hidden split">
+        <form class="panel" id="ovForm" onsubmit="return false">
+          <h3 style="margin:0 0 6px">Overlay pour OBS / Streamlabs</h3>
+          <p class="hint" style="margin-bottom:12px">Coche ce que tu veux afficher, copie le lien et ajoute-le comme « Source navigateur » (1920 × 1080). En vertical, règle la source en 1080 × 1920. Une source par lien : tu peux en créer plusieurs et les activer selon tes scènes.</p>
+          <div class="lab" style="margin-bottom:6px">Éléments</div>
+          <div style="display:grid;gap:6px;margin-bottom:12px">
+            <label class="small"><input type="checkbox" name="show" value="offres" checked> Offres disponibles sur le site</label>
+            <label class="small"><input type="checkbox" name="show" value="commande" checked> Commande groupée en cours (avec compte à rebours)</label>
+            <label class="small"><input type="checkbox" name="show" value="prochaines"> Prochaines commandes</label>
+          </div>
+          <div class="formgrid">
+            <label class="lab">Format<select class="field" id="ovFormat"><option value="horizontal">Horizontal 16:9</option><option value="vertical">Vertical 9:16</option></select></label>
+            <label class="lab">Résolution<select class="field" id="ovScale"><option value="1">1920 × 1080</option><option value="0.6667">1280 × 720</option></select></label>
+            <label class="small full hidden" id="ovSafeWrap"><input type="checkbox" id="ovSafe" checked> Laisser libres le haut et le bas (en-tête et commentaires Instagram)</label>
+            <label class="lab">Offres : disposition<select class="field" id="ovLayout"><option value="bandeau">Bandeau en bas</option><option value="colonne">Colonne sur le côté</option></select></label>
+            <label class="lab">Côté de la colonne<select class="field" id="ovSide"><option value="right">Droite</option><option value="left">Gauche</option></select></label>
+            <label class="lab">Cartes par page<input class="field" id="ovMax" type="number" min="1" max="12" placeholder="auto"></label>
+            <label class="lab">Secondes par page<input class="field" id="ovPage" type="number" min="3" value="8"></label>
+            <label class="lab">Coin « commande »<select class="field" id="ovCpos"><option value="tr">Haut droite</option><option value="tl">Haut gauche</option><option value="br">Bas droite</option><option value="bl">Bas gauche</option></select></label>
+            <label class="lab">Coin « prochaines »<select class="field" id="ovPpos"><option value="tl">Haut gauche</option><option value="tr">Haut droite</option><option value="bl">Bas gauche</option><option value="br">Bas droite</option></select></label>
+            <label class="lab">Affichage<select class="field" id="ovRotate"><option value="0">Tout en même temps</option><option value="10">Un par un · 10 s</option><option value="20">Un par un · 20 s</option><option value="45">Un par un · 45 s</option></select></label>
+            <label class="small full"><input type="checkbox" id="ovAlert" checked> Grande alerte à l'écran quand je publie une nouvelle offre</label>
+            <label class="small full"><input type="checkbox" id="ovQr" checked> QR code vers le site</label>
+          </div>
+          <label class="lab" style="margin-top:14px">Lien de la source navigateur<input class="field" id="ovUrl" readonly></label>
+          <div style="display:flex;gap:8px;margin-top:8px"><button class="btn red" type="button" id="ovCopy" style="flex:1">Copier le lien</button><a class="btn ghost" id="ovOpen" target="_blank" rel="noopener">Ouvrir</a></div>
+        </form>
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><strong>Aperçu</strong>
+            <label class="small"><input type="checkbox" id="ovDemo"> Données de démo</label></div>
+          <div id="ovFrameWrap" style="position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:10px;background:#333">
+            <iframe id="ovFrame" title="Aperçu overlay" style="position:absolute;left:0;top:0;width:1920px;height:1080px;border:0;transform-origin:0 0"></iframe>
+          </div>
+          <p class="hint" style="margin-top:8px">Le damier représente la transparence : il n'apparaît pas dans OBS.</p>
+        </div>
       </div>
 
       <!-- Lives -->
@@ -1022,6 +1061,58 @@ $("#adminLives").addEventListener("click", e => {
   const d = e.target.closest("[data-dellive]");
   if (d && confirm("Supprimer ce live ?")) Admin.act(() => api.deleteLive(d.dataset.dellive), "Live supprimé");
 });
+
+/* ---------- Générateur d'overlay ---------- */
+const Overlay = {
+  base() { return location.href.replace(/#.*$/, "").replace(/[^/]*$/, "") + "overlay.html"; },
+  params(extra = {}) {
+    const q = new URLSearchParams();
+    const show = $$('#ovForm [name="show"]:checked').map(c => c.value);
+    q.set("show", show.join(",") || "offres");
+    if (show.includes("offres")) {
+      q.set("layout", $("#ovLayout").value);
+      if ($("#ovLayout").value === "colonne") q.set("side", $("#ovSide").value);
+      if ($("#ovMax").value) q.set("max", $("#ovMax").value);
+      q.set("page", $("#ovPage").value || 8);
+    }
+    if (show.includes("commande")) q.set("cpos", $("#ovCpos").value);
+    if (show.includes("prochaines")) q.set("ppos", $("#ovPpos").value);
+    if (+$("#ovRotate").value && show.length > 1) q.set("rotate", $("#ovRotate").value);
+    if (!$("#ovAlert").checked) q.set("alerte", "0");
+    if (!$("#ovQr").checked) q.set("qr", "0");
+    if ($("#ovScale").value !== "1") q.set("scale", $("#ovScale").value);
+    if ($("#ovFormat").value === "vertical") { q.set("format", "vertical"); if (!$("#ovSafe").checked) q.set("safe", "0"); }
+    Object.entries(extra).forEach(([k, v]) => q.set(k, v));
+    return q.toString();
+  },
+  update() {
+    const v = $("#ovFormat").value === "vertical";
+    $("#ovSafeWrap").classList.toggle("hidden", !v);
+    const [o1, o2] = $("#ovScale").options;
+    o1.textContent = v ? "1080 × 1920" : "1920 × 1080"; o2.textContent = v ? "720 × 1280" : "1280 × 720";
+    $("#ovCpos").options[0].textContent = v ? "En haut" : "Haut droite"; $("#ovCpos").options[1].textContent = v ? "En haut" : "Haut gauche";
+    $("#ovCpos").options[2].textContent = v ? "En bas" : "Bas droite"; $("#ovCpos").options[3].textContent = v ? "En bas" : "Bas gauche";
+    $("#ovPpos").options[0].textContent = v ? "En haut" : "Haut gauche"; $("#ovPpos").options[1].textContent = v ? "En haut" : "Haut droite";
+    $("#ovPpos").options[2].textContent = v ? "En bas" : "Bas gauche"; $("#ovPpos").options[3].textContent = v ? "En bas" : "Bas droite";
+    const wrap = $("#ovFrameWrap"), fr = $("#ovFrame");
+    wrap.style.aspectRatio = v ? "9/16" : "16/9"; wrap.style.maxWidth = v ? "360px" : ""; wrap.style.margin = v ? "0 auto" : "";
+    fr.style.width = v ? "1080px" : "1920px"; fr.style.height = v ? "1920px" : "1080px";
+    const url = this.base() + "?" + this.params().replace(/%2C/g, ",");
+    $("#ovUrl").value = url; $("#ovOpen").href = url;
+    const prev = this.base() + "?" + this.params({ preview: 1, scale: 1, ...($("#ovDemo").checked ? { demo: 1 } : {}) });
+    if ($("#ovFrame").dataset.src !== prev) { $("#ovFrame").dataset.src = prev; $("#ovFrame").src = prev; }
+    this.fit();
+  },
+  fit() { const w = $("#ovFrameWrap").clientWidth, base = $("#ovFormat").value === "vertical" ? 1080 : 1920; if (w) $("#ovFrame").style.transform = `scale(${w / base})`; }
+};
+$("#ovForm").addEventListener("input", () => Overlay.update());
+$("#ovForm").addEventListener("change", () => Overlay.update());
+$("#ovDemo").addEventListener("change", () => Overlay.update());
+$("#ovCopy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("#ovUrl").value); toast("Lien copié ✓"); } catch { $("#ovUrl").select(); }
+});
+$$('[data-atab="overlay"]').forEach(b => b.addEventListener("click", () => setTimeout(() => Overlay.update(), 0)));
+window.addEventListener("resize", () => Overlay.fit());
 
 /* =========================================================
    Navigation et démarrage

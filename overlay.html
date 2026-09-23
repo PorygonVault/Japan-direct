@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Overlay stream</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<style>
+/* Overlay pensé pour une source navigateur 1920 × 1080, fond transparent */
+:root{
+  --bg:rgba(22,20,18,.88); --bg2:rgba(255,255,255,.07); --ink:#f5f0e8; --muted:#b9b0a4;
+  --red:#d9412b; --gold:#d6a94f; --ok:#5cc187; --line:rgba(255,255,255,.12);
+  --r:22px; --scale:1;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:transparent;overflow:hidden}
+body{width:1920px;height:1080px;color:var(--ink);font:500 22px/1.35 Inter,system-ui,sans-serif;transform:scale(var(--scale));transform-origin:0 0;position:relative}
+body.preview{background:repeating-conic-gradient(#3a3a3a 0 25%,#2c2c2c 0 50%) 0 0/40px 40px}
+h2,h3,.jp{font-family:"Zen Kaku Gothic New",Inter,sans-serif}
+.panel{position:absolute;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.35);backdrop-filter:blur(6px);transition:opacity .6s ease,transform .6s ease}
+.panel.off{opacity:0;transform:translateY(20px);pointer-events:none}
+.hanko{width:44px;height:44px;border-radius:10px;background:var(--red);color:#fff;display:grid;place-items:center;font:900 24px "Zen Kaku Gothic New",sans-serif;transform:rotate(-4deg);flex:none}
+.kicker{font-size:15px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700}
+.badge{display:inline-block;font-size:14px;font-weight:800;padding:3px 10px;border-radius:999px;letter-spacing:.04em;text-transform:uppercase}
+.b-psa{background:var(--gold);color:#1a1510}
+.b-new{background:var(--red);color:#fff}
+.b-soon{background:var(--bg2);color:var(--muted)}
+.b-open{background:rgba(92,193,135,.18);color:var(--ok)}
+
+/* positions */
+.pos-tl{top:40px;left:40px}.pos-tr{top:40px;right:40px}.pos-bl{bottom:40px;left:40px}.pos-br{bottom:40px;right:40px}
+
+/* ---------- Offres : bandeau ---------- */
+#offres.bandeau{left:40px;right:40px;bottom:40px;height:300px;display:flex;gap:28px;padding:22px 26px;align-items:stretch}
+#offres .side{width:280px;flex:none;display:flex;flex-direction:column;gap:10px;border-right:1px solid var(--line);padding-right:24px}
+#offres .side h2{margin:0;font-size:34px;line-height:1.05;font-weight:900}
+#offres .side .url{font-weight:700;color:var(--gold);font-size:20px;word-break:break-all}
+#offres .side .qr{margin-top:auto;display:flex;gap:12px;align-items:center;font-size:15px;color:var(--muted)}
+#offres .side .qr svg{width:96px;height:96px;background:#fff;border-radius:8px;padding:6px;flex:none}
+#offres .track{flex:1;display:flex;gap:18px;overflow:hidden;align-items:stretch}
+#offres .page{display:flex;gap:18px;width:100%;transition:opacity .5s}
+#offres .page.fade{opacity:0}
+.card{width:176px;flex:none;display:flex;flex-direction:column;gap:6px}
+.card .ph{position:relative;width:176px;height:176px;border-radius:12px;overflow:hidden;background:#2a2622}
+.card .ph img{width:100%;height:100%;object-fit:cover}
+.card .ph .badge{position:absolute;left:8px;bottom:8px}
+.card .ph .b-new{left:auto;right:8px;bottom:auto;top:8px}
+.card .t{font-weight:700;font-size:18px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .p{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.card .p strong{font-size:24px;font-weight:800}
+.card .p span{font-size:14px;color:var(--muted);white-space:nowrap}
+.pager{display:flex;gap:6px;margin-top:6px}
+.pager i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.pager i.on{background:var(--red)}
+
+/* ---------- Offres : colonne ---------- */
+#offres.colonne{top:40px;bottom:40px;width:460px;padding:24px;display:flex;flex-direction:column;gap:16px}
+#offres.colonne.pos-left{left:40px}#offres.colonne.pos-right{right:40px}
+#offres.colonne .side{width:auto;border:0;padding:0;flex-direction:row;align-items:center;gap:14px}
+#offres.colonne .side .qr{display:none}
+#offres.colonne .track{flex-direction:column}
+#offres.colonne .page{flex-direction:column;gap:12px}
+#offres.colonne .card{width:auto;flex-direction:row;gap:14px;align-items:center;background:var(--bg2);border-radius:14px;padding:10px}
+#offres.colonne .card .ph{width:96px;height:96px}
+#offres.colonne .card .body{flex:1;min-width:0}
+#offres.colonne .card .ph .badge{font-size:11px;padding:2px 6px}
+#offres.colonne .card .ph .b-new{top:4px;right:4px}
+#offres.colonne .card .ph .b-psa{left:4px;bottom:4px}
+#offres.colonne .foot{margin-top:auto;display:flex;gap:14px;align-items:center;color:var(--muted);font-size:17px}
+#offres.colonne .foot svg{width:92px;height:92px;background:#fff;border-radius:8px;padding:6px}
+.empty{color:var(--muted);font-size:22px;align-self:center;padding:20px}
+
+/* ---------- Commande en cours ---------- */
+#commande{width:600px;padding:24px 28px}
+#commande h3{margin:6px 0 4px;font-size:32px;line-height:1.15;font-weight:900}
+#commande .meta{color:var(--muted);font-size:18px}
+.cd{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0 6px}
+.cd div{background:var(--bg2);border-radius:12px;padding:10px 4px;text-align:center}
+.cd strong{display:block;font-size:40px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.05}
+.cd span{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.cd.urgent strong{color:var(--red)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);margin-top:18px}
+.step{text-align:center;font-size:15px;color:var(--muted);position:relative}
+.step::before{content:"";position:absolute;top:13px;left:-50%;right:50%;height:3px;background:var(--line)}
+.step:first-child::before{display:none}
+.step .dot{position:relative;width:28px;height:28px;border-radius:50%;margin:0 auto 6px;border:2px solid var(--line);background:#1f1c19;display:grid;place-items:center;font-size:13px;font-weight:800}
+.step.done::before,.step.cur::before{background:var(--red)}
+.step.done .dot{background:var(--red);border-color:var(--red);color:#fff}
+.step.cur .dot{border-color:var(--red);color:var(--red)}
+.step.done,.step.cur{color:var(--ink)}
+.thumbs{display:flex;gap:6px;margin-top:16px}
+.thumbs img{width:44px;height:44px;border-radius:6px;object-fit:cover}
+.thumbs span{font-size:15px;color:var(--muted);align-self:center;margin-left:4px}
+
+/* ---------- Prochaines commandes ---------- */
+#prochaines{width:520px;padding:24px 28px}
+#prochaines h3{margin:6px 0 12px;font-size:30px;font-weight:900}
+#prochaines ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+#prochaines li{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--bg2);border-radius:12px;padding:12px 16px}
+#prochaines li b{flex:1;font-size:21px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#prochaines li span{font-size:17px;color:var(--gold);font-weight:700;white-space:nowrap}
+
+/* ---------- Alerte nouvelle offre ---------- */
+#alert{left:50%;top:50%;width:760px;margin-left:-380px;margin-top:-190px;display:flex;gap:26px;padding:26px;border:2px solid var(--red)}
+#alert .ph{width:240px;height:320px;border-radius:14px;overflow:hidden;flex:none;background:#2a2622}
+#alert .ph img{width:100%;height:100%;object-fit:cover}
+#alert .kicker{color:var(--red)}
+#alert h3{font-size:40px;margin:8px 0;line-height:1.1;font-weight:900}
+#alert .price{font-size:52px;font-weight:800;margin-top:14px}
+#alert .url{color:var(--gold);font-weight:700;margin-top:auto}
+#alert .col{display:flex;flex-direction:column;min-width:0}
+#alert.show{animation:pop .6s cubic-bezier(.2,1.4,.4,1)}
+
+/* ---------- Format vertical 1080 × 1920 ---------- */
+body.v{width:1080px;height:1920px}
+.vstack{position:absolute;left:40px;right:40px;display:flex;flex-direction:column;gap:20px}
+#vtop{top:var(--st,40px)}
+#vbot{bottom:var(--sb,40px)}
+body.v .vstack .panel{position:relative;inset:auto;width:auto;animation:fadein .5s ease}
+body.v .vstack .panel.off{display:none}
+@keyframes fadein{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+body.v #offres.bandeau{height:auto;flex-direction:column;gap:16px;padding:22px}
+body.v #offres .side{width:auto;flex-direction:row;align-items:center;gap:16px;border-right:0;border-bottom:1px solid var(--line);padding:0 0 14px}
+body.v #offres .side h2{font-size:30px}
+body.v #offres .side h2 br{display:none}
+body.v #offres .side .qr{margin:0 0 0 auto}
+body.v #offres .side .qr span{display:none}
+body.v #offres .side .qr svg{width:84px;height:84px}
+body.v #offres.bandeau .track,body.v #offres.bandeau .page{gap:16px}
+body.v #offres.bandeau .card{width:172px}
+body.v #offres.bandeau .card .ph{width:172px;height:172px}
+body.v #offres.panel{inset:auto}
+body.v #alert{width:960px;margin-left:-480px;top:28%}
+body.v #commande,body.v #prochaines,body.v #offres{width:auto}
+body.v #offres .side{flex-wrap:wrap;row-gap:4px}
+body.v #offres .side .kicker{width:100%}
+body.v #commande h3{font-size:34px}
+@keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+</style>
+</head>
+<body>
+
+<div class="vstack" id="vtop"></div><div class="vstack" id="vbot"></div>
+<section class="panel off" id="offres"></section>
+<section class="panel off" id="commande"></section>
+<section class="panel off" id="prochaines"></section>
+<section class="panel off" id="alert"></section>
+
+<script>
+/* =========================================================
+   CONFIGURATION : mêmes valeurs que dans index.html
+   ========================================================= */
+const SUPABASE_URL      = "https://vzctmpbulxlxksbhfygs.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6Y3RtcGJ1bHhseGtzYmhmeWdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNjEyOTksImV4cCI6MjEwNTczNzI5OX0.R6y9nt1QPanZnLlCIXSbmEp0ZxKjtm7ZHBI3iSBlNEg";
+const SHOP_NAME         = "Direct Japon";
+const SITE_URL          = "https://porygonvault.com";   // adresse de ton site (texte + QR code)
+/* ========================================================= */
+
+/* Options par l'adresse de la page, par exemple :
+   overlay.html?show=offres,commande&layout=bandeau&rotate=0
+   show     : offres, commande, prochaines (séparés par des virgules)
+   rotate   : 0 = tout en même temps ; N = un élément à la fois, change toutes les N secondes
+   layout   : bandeau (bas de l'écran) ou colonne (côté)          [offres]
+   side     : right ou left (pour layout=colonne)                  [offres]
+   max      : nombre de cartes par page                            [offres]
+   page     : secondes entre deux pages de cartes                  [offres]
+   cpos / ppos : tl, tr, bl, br (coin de "commande" / "prochaines")
+   alerte   : 1 = grande alerte quand une nouvelle offre arrive, 0 = non
+   qr       : 1 = afficher le QR code du site, 0 = non
+   format   : horizontal (1920×1080) ou vertical (1080×1920)
+   safe     : 1 = en vertical, laisse libres le haut et le bas (zones Instagram), 0 = non
+   scale    : 1 = 1920×1080 ; 0.6667 = 1280×720 (idem en vertical : 1080×1920 / 720×1280)
+   demo     : 1 = données fictives (pour tester)                                 */
+const Q = new URLSearchParams(location.search);
+const opt = (k, d) => Q.has(k) ? Q.get(k) : d;
+const SHOW = opt("show", "offres,commande,prochaines").split(",").map(s => s.trim()).filter(s => ["offres", "commande", "prochaines"].includes(s));
+const ROTATE = +opt("rotate", 0);
+const VERTICAL = opt("format", "horizontal") === "vertical";
+const LAYOUT = opt("layout", "bandeau") === "colonne" ? "colonne" : "bandeau";
+const SIDE = opt("side", "right") === "left" ? "left" : "right";
+const PAGE_SEC = Math.max(3, +opt("page", 8));
+const MAX = Math.max(1, +opt("max", VERTICAL ? (LAYOUT === "colonne" ? 4 : 5) : (LAYOUT === "colonne" ? 6 : 7)));
+const CPOS = opt("cpos", "tr"), PPOS = opt("ppos", "tl");
+const ALERT = opt("alerte", "1") !== "0";
+const QR = opt("qr", "1") !== "0";
+const DEMO = opt("demo", "0") === "1" || SUPABASE_URL.includes("VOTRE");
+const SAFE = VERTICAL && opt("safe", "1") !== "0";   // zones sûres Instagram (en-tête en haut, commentaires en bas)
+document.documentElement.style.setProperty("--scale", +opt("scale", 1) || 1);
+if (opt("preview", "0") === "1") document.body.classList.add("preview");
+
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const eur = n => n == null ? "" : new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR" }).format(n);
+const fmtDay = d => new Intl.DateTimeFormat("fr-BE", { weekday: "short", day: "numeric", month: "short" }).format(d);
+const dOnly = v => { const [y, m, d] = String(v).slice(0, 10).split("-").map(Number); return new Date(y, m - 1, d); };
+const siteLabel = SITE_URL.replace(/^https?:\/\//, "").replace(/\/$/, "");
+const STEPS = ["Commande", "Préparation", "Livraison", "Livrée"];
+const isPSA = c => /^PSA \d+$/.test(c || "");
+
+function placeholder(title) {
+  const t = esc((title || "?").slice(0, 18));
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><rect width="400" height="400" fill="#2a2622"/><circle cx="200" cy="170" r="70" fill="#d9412b"/><text x="200" y="197" font-size="72" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="900">直</text><text x="200" y="310" font-size="30" text-anchor="middle" fill="#f5f0e8" font-family="sans-serif" font-weight="700">${t}</text></svg>`);
+}
+const img = o => o.image_url || placeholder(o.title);
+function qrSvg() {
+  if (!QR || typeof qrcode !== "function") return "";
+  try { const q = qrcode(0, "M"); q.addData(SITE_URL); q.make(); return q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }); } catch { return ""; }
+}
+
+/* ---------- Données ---------- */
+const S = { offers: [], orders: [], counts: {}, seen: new Set(), ready: false };
+let sb = null;
+async function load() {
+  if (DEMO) return demoLoad();
+  try {
+    const cols = "id,title,card_set,card_number,condition,price_eur,image_url,status,group_order_id,created_at";
+    const [o, g, c] = await Promise.all([
+      sb.from("offers").select(cols).order("created_at", { ascending: false }).limit(300),
+      sb.from("group_orders").select("*").order("position").order("created_at", { ascending: false }),
+      sb.rpc("interest_counts")
+    ]);
+    if (o.error || g.error) throw o.error || g.error;
+    S.offers = o.data; S.orders = g.data;
+    S.counts = Object.fromEntries((c.data || []).map(r => [r.offer_id, r.n]));
+  } catch (e) { console.error(e); return; }
+  afterLoad();
+}
+function afterLoad() {
+  const avail = S.offers.filter(o => o.status === "available");
+  if (S.ready && ALERT) avail.filter(o => !S.seen.has(o.id)).slice(0, 1).forEach(showAlert);
+  avail.forEach(o => S.seen.add(o.id));
+  S.ready = true;
+  renderOffers(); renderCommande(); renderProchaines();
+}
+function demoLoad() {
+  const now = Date.now(), D = 864e5, iso = d => new Date(d).toISOString().slice(0, 10);
+  const mk = (id, title, condition, price_eur, status, g, ago) => ({ id, title, condition, price_eur, status, group_order_id: g, image_url: "", created_at: new Date(now - ago).toISOString() });
+  if (!S.offers.length) S.offers = [
+    mk("o1", "Pikachu ex SAR", "Near Mint", 112, "available", null, 1e5), mk("o2", "Évoli ex SAR", "Mint", 74, "available", null, 2e5),
+    mk("o3", "Dracaufeu ex SAR", "PSA 10", 139, "reserved", "g2", 3e5), mk("o4", "Mew ex UR", "PSA 9", 32, "available", null, 4e5),
+    mk("o5", "Mimiqui AR", "Mint", 14.5, "available", null, 5e5), mk("o6", "Lillie's Clefairy ex SAR", "Near Mint", 96, "available", null, 6e5),
+    mk("o7", "Ronflex AR", "Mint", 9, "available", null, 7e5), mk("o8", "Gardevoir ex SAR", "PSA 10", 88, "available", null, 8e5),
+    mk("o9", "Umbreon VMAX", "Near Mint", 420, "available", null, 9e5), mk("o10", "Lugia V SA", "Excellent", 160, "available", null, 1e6)
+  ];
+  S.orders = [
+    { id: "g2", name: "Commande #2 · lives de septembre", step: 0, position: 0, step_dates: {}, starts_on: iso(now - 5 * D), ends_on: iso(now + 2 * D) },
+    { id: "g3", name: "Commande #3 · lives d'octobre", step: -1, position: 1, step_dates: {}, starts_on: iso(now + 10 * D) },
+    { id: "g4", name: "Spécial Noël", step: -1, position: 2, step_dates: {} }
+  ];
+  S.counts = { o1: 3, o3: 1, o9: 5 };
+  afterLoad();
+}
+
+/* ---------- Offres ---------- */
+let pageIdx = 0, pageTimer = null;
+function renderOffers() {
+  const el = $("#offres");
+  if (!SHOW.includes("offres")) return;
+  const list = S.offers.filter(o => o.status === "available");
+  const pages = [];
+  for (let i = 0; i < list.length; i += MAX) pages.push(list.slice(i, i + MAX));
+  if (pageIdx >= pages.length) pageIdx = 0;
+  const fresh = Date.now() - 2 * 3600e3;
+  const card = o => `<div class="card"><div class="ph"><img src="${esc(img(o))}" alt="">
+      ${isPSA(o.condition) ? `<span class="badge b-psa">${esc(o.condition)}</span>` : ""}
+      ${new Date(o.created_at) > fresh ? `<span class="badge b-new">Nouveau</span>` : ""}</div>
+      <div class="body"><div class="t">${esc(o.title)}</div>
+      <div class="p"><strong>${esc(eur(o.price_eur)) || "DM"}</strong>${S.counts[o.id] ? `<span>🔥 ${S.counts[o.id]}</span>` : `<span>${isPSA(o.condition) ? "" : esc(o.condition || "")}</span>`}</div></div></div>`;
+  const pager = pages.length > 1 ? `<div class="pager">${pages.map((_, i) => `<i class="${i === pageIdx ? "on" : ""}"></i>`).join("")}</div>` : "";
+  const qr = qrSvg();
+  el.className = `panel ${LAYOUT}${LAYOUT === "colonne" ? " pos-" + SIDE : ""}${el.classList.contains("off") ? " off" : ""}`;
+  el.innerHTML = LAYOUT === "bandeau"
+    ? `<div class="side"><div class="kicker">${esc(SHOP_NAME)}</div><h2 class="jp">Offres <br>du Japon</h2>
+        <div>Réserve avec ton @&nbsp;sur</div><div class="url">${esc(siteLabel)}</div>${pager}
+        ${qr ? `<div class="qr">${qr}<span>Scanne pour réserver</span></div>` : ""}</div>
+       <div class="track"><div class="page">${pages.length ? pages[pageIdx].map(card).join("") : `<div class="empty">Les offres arrivent pendant le live…</div>`}</div></div>`
+    : `<div class="side"><span class="hanko">直</span><div><div class="kicker">${esc(SHOP_NAME)}</div><h2 class="jp" style="margin:0;font-size:30px">Offres du Japon</h2></div></div>
+       <div class="track"><div class="page">${pages.length ? pages[pageIdx].map(card).join("") : `<div class="empty">Les offres arrivent pendant le live…</div>`}</div></div>
+       <div class="foot">${qr}<div>Réserve avec ton @ sur<br><b style="color:var(--gold)">${esc(siteLabel)}</b>${pager}</div></div>`;
+  clearTimeout(pageTimer);
+  if (pages.length > 1) pageTimer = setTimeout(() => {
+    const pg = el.querySelector(".page"); if (pg) pg.classList.add("fade");
+    setTimeout(() => { pageIdx = (pageIdx + 1) % pages.length; renderOffers(); }, 500);
+  }, PAGE_SEC * 1000);
+}
+
+/* ---------- Commande en cours ---------- */
+let cdTarget = null;
+function currentOrder() { return S.orders.find(g => g.step === 0) || S.orders.find(g => g.step === 1 || g.step === 2); }
+function renderCommande() {
+  if (!SHOW.includes("commande")) return;
+  const el = $("#commande"), g = currentOrder();
+  el.className = `panel pos-${CPOS}${el.classList.contains("off") ? " off" : ""}`;
+  if (!g) { el.dataset.empty = "1"; el.innerHTML = `<div class="kicker">Commande groupée</div><h3 class="jp">Aucune commande en cours</h3>`; cdTarget = null; return; }
+  delete el.dataset.empty;
+  const items = S.offers.filter(o => o.group_order_id === g.id);
+  const openNow = g.step === 0 && g.ends_on;
+  cdTarget = openNow ? new Date(dOnly(g.ends_on).getTime() + 864e5 - 1000) : null;
+  const period = g.starts_on && g.ends_on ? `Du ${fmtDay(dOnly(g.starts_on))} au ${fmtDay(dOnly(g.ends_on))}` : g.ends_on ? `Jusqu'au ${fmtDay(dOnly(g.ends_on))}` : "";
+  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div class="kicker">${g.step === 0 ? "Commande groupée ouverte" : "Commande groupée en cours"}</div>
+      <span class="badge ${g.step === 0 ? "b-open" : "b-soon"}">${STEPS[g.step]}</span></div>
+    <h3 class="jp">${esc(g.name)}</h3>
+    <div class="meta">${items.length} carte${items.length > 1 ? "s" : ""}${period ? " · " + esc(period) : ""}</div>
+    ${cdTarget ? `<div class="kicker" style="margin-top:16px">Clôture dans</div><div class="cd" id="cd">${["jours", "heures", "min", "sec"].map(u => `<div><strong>--</strong><span>${u}</span></div>`).join("")}</div>`
+      : `<div class="steps">${STEPS.map((s, i) => `<div class="step ${i < g.step ? "done" : i === g.step ? "cur" : ""}"><div class="dot">${i < g.step ? "✓" : i + 1}</div>${s}</div>`).join("")}</div>`}
+    ${items.length ? `<div class="thumbs">${items.slice(0, 9).map(o => `<img src="${esc(img(o))}" alt="">`).join("")}${items.length > 9 ? `<span>+${items.length - 9}</span>` : ""}</div>` : ""}`;
+  tick();
+}
+function tick() {
+  if (!cdTarget) return;
+  const s = Math.max(0, Math.floor((cdTarget - Date.now()) / 1000));
+  const parts = [Math.floor(s / 86400), Math.floor(s % 86400 / 3600), Math.floor(s % 3600 / 60), s % 60];
+  const cd = $("#cd"); if (!cd) return;
+  cd.classList.toggle("urgent", s < 86400);
+  cd.querySelectorAll("strong").forEach((el, i) => { el.textContent = String(parts[i]).padStart(2, "0"); });
+}
+
+/* ---------- Prochaines commandes ---------- */
+function renderProchaines() {
+  if (!SHOW.includes("prochaines")) return;
+  const el = $("#prochaines"), list = S.orders.filter(g => g.step === -1).slice(0, 5);
+  el.className = `panel pos-${PPOS}${el.classList.contains("off") ? " off" : ""}`;
+  el.dataset.empty = list.length ? "" : "1";
+  el.innerHTML = `<div class="kicker">${esc(SHOP_NAME)}</div><h3 class="jp">Prochaines commandes</h3>
+    ${list.length ? `<ul>${list.map(g => `<li><b>${esc(g.name)}</b><span>${g.starts_on ? "Ouverture " + esc(fmtDay(dOnly(g.starts_on))) : "Bientôt"}</span></li>`).join("")}</ul>`
+      : `<div class="empty" style="padding:0">Annonce très bientôt !</div>`}`;
+}
+
+/* ---------- Alerte nouvelle offre ---------- */
+let alertTimer = null;
+function showAlert(o) {
+  const el = $("#alert");
+  el.innerHTML = `<div class="ph"><img src="${esc(img(o))}" alt=""></div><div class="col">
+    <div class="kicker">🔴 Nouvelle offre sur le mur</div><h3 class="jp">${esc(o.title)}</h3>
+    <div>${[o.card_set, o.card_number].filter(Boolean).map(esc).join(" · ")} ${isPSA(o.condition) ? `<span class="badge b-psa">${esc(o.condition)}</span>` : esc(o.condition || "")}</div>
+    <div class="price">${esc(eur(o.price_eur))}</div><div class="url">Réserve sur ${esc(siteLabel)}</div></div>`;
+  el.classList.remove("off", "show"); void el.offsetWidth; el.classList.add("show");
+  clearTimeout(alertTimer); alertTimer = setTimeout(() => el.classList.add("off"), 9000);
+}
+
+/* ---------- Affichage / rotation ---------- */
+let rotIdx = 0;
+function applyVisibility() {
+  const ids = ["offres", "commande", "prochaines"];
+  if (ROTATE > 0 && SHOW.length > 1) {
+    ids.forEach(id => $("#" + id).classList.toggle("off", id !== SHOW[rotIdx % SHOW.length]));
+  } else {
+    ids.forEach(id => $("#" + id).classList.toggle("off", !SHOW.includes(id)));
+  }
+}
+if (ROTATE > 0 && SHOW.length > 1) setInterval(() => { rotIdx++; applyVisibility(); }, ROTATE * 1000);
+
+/* ---------- Mise en page verticale : on empile les éléments en haut / en bas ---------- */
+if (VERTICAL) {
+  document.body.classList.add("v");
+  if (SAFE) { document.body.style.setProperty("--st", "200px"); document.body.style.setProperty("--sb", "460px"); }
+  const top = $("#vtop"), bot = $("#vbot");
+  const place = (id, pos) => (pos[0] === "b" ? bot : top).appendChild($("#" + id));
+  if (SHOW.includes("commande")) place("commande", CPOS);
+  if (SHOW.includes("prochaines")) place("prochaines", PPOS);
+  if (SHOW.includes("offres")) bot.appendChild($("#offres"));
+}
+
+/* ---------- Démarrage ---------- */
+applyVisibility();
+if (!DEMO && window.supabase) {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let t; const reload = () => { clearTimeout(t); t = setTimeout(load, 500); };
+  sb.channel("overlay").on("postgres_changes", { event: "*", schema: "public", table: "offers" }, reload)
+    .on("postgres_changes", { event: "*", schema: "public", table: "group_orders" }, reload).subscribe();
+  setInterval(load, 60000);
+}
+load();
+setInterval(tick, 1000);
+// En démo : ?demo=1&testalerte=1 simule une nouvelle offre après 3 s
+if (DEMO && opt("testalerte", "0") === "1") setTimeout(() => {
+  S.offers.unshift({ id: "new" + Date.now(), title: "Mewtwo ex SAR", condition: "PSA 10", price_eur: 129, status: "available", image_url: "", created_at: new Date().toISOString(), card_set: "SV2a", card_number: "205/165" });
+  afterLoad();
+}, 3000);
+</script>
+</body>
+</html>
