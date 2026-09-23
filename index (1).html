@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Direct Japon · Offres en live</title>
+<meta name="description" content="Cartes trouvées en direct au Japon pendant les lives Instagram. Réserve avec ton @, suis ta commande groupée.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --paper:#f7f3ec; --card:#fffdf9; --ink:#1d1b19; --muted:#6f6860; --line:#e6ded2;
+  --red:#c8341f; --red-ink:#fff; --red-soft:#f8e3de; --gold:#b98a2f;
+  --ok:#2f7d4f; --ok-soft:#e1f1e7; --warn:#a86a10; --warn-soft:#f7ecd8; --off:#8b8580; --off-soft:#ece8e3;
+  --shadow:0 1px 2px rgba(40,30,20,.06),0 6px 20px rgba(40,30,20,.07);
+  --radius:14px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#161412; --card:#1f1c19; --ink:#f2ede6; --muted:#a79f95; --line:#342f2a;
+    --red:#e2553f; --red-ink:#fff; --red-soft:#3a201b; --gold:#d6a94f;
+    --ok:#5cc187; --ok-soft:#1b3326; --warn:#e0a24a; --warn-soft:#3a2c16; --off:#8f8880; --off-soft:#2a2622;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#161412; --card:#1f1c19; --ink:#f2ede6; --muted:#a79f95; --line:#342f2a;
+  --red:#e2553f; --red-ink:#fff; --red-soft:#3a201b; --gold:#d6a94f;
+  --ok:#5cc187; --ok-soft:#1b3326; --warn:#e0a24a; --warn-soft:#3a2c16; --off:#8f8880; --off-soft:#2a2622;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 Inter,system-ui,-apple-system,sans-serif;overflow-x:hidden}
+h1,h2,h3,.brand{font-family:"Zen Kaku Gothic New",Inter,sans-serif;letter-spacing:-.01em}
+a{color:inherit}
+img{max-width:100%;display:block}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.hidden{display:none!important}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+/* header */
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:14px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:18px;text-decoration:none;white-space:nowrap}
+.hanko{width:30px;height:30px;border-radius:7px;background:var(--red);color:var(--red-ink);display:grid;place-items:center;font-size:15px;font-weight:900;transform:rotate(-4deg)}
+nav.tabs{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs a{padding:8px 12px;border-radius:999px;text-decoration:none;font-weight:600;font-size:14px;color:var(--muted);white-space:nowrap}
+nav.tabs a[aria-current="page"]{background:var(--ink);color:var(--paper)}
+@media (max-width:640px){
+  header.top .wrap{height:auto;flex-wrap:wrap;padding-top:10px;padding-bottom:8px;gap:8px}
+  nav.tabs{margin-left:0;width:100%}
+}
+
+/* banner */
+.demo{background:var(--warn-soft);color:var(--warn);font-size:13px;text-align:center;padding:8px 16px}
+
+/* hero / live timer */
+.hero{padding:28px 0 8px}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:stretch}
+@media (max-width:820px){.hero-grid{grid-template-columns:1fr}}
+.hero h1{font-size:clamp(28px,5vw,44px);line-height:1.1;margin:0 0 10px;font-weight:900}
+.hero h1 em{font-style:normal;color:var(--red)}
+.hero p.lead{margin:0 0 16px;color:var(--muted);max-width:52ch;font-size:16px}
+.how{display:flex;gap:10px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.how li{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px 6px 6px;font-size:13px;font-weight:500}
+.how b{width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-size:12px}
+.livebox{background:var(--ink);color:var(--paper);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.livebox::after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;background:var(--red);opacity:.9}
+.livebox>*{position:relative;z-index:1}
+.livebox .label{font-size:12px;text-transform:uppercase;letter-spacing:.12em;opacity:.7;font-weight:600}
+.livebox .ltitle{font-family:"Zen Kaku Gothic New",sans-serif;font-weight:700;font-size:20px;margin:4px 0 2px}
+.livebox .ldate{opacity:.75;font-size:14px}
+.count{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0}
+.count div{background:rgba(255,255,255,.08);border-radius:10px;padding:10px 4px;text-align:center}
+.count strong{display:block;font-size:clamp(22px,4vw,30px);font-variant-numeric:tabular-nums;font-weight:700;line-height:1.1}
+.count span{font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.08em}
+.onair{display:inline-flex;align-items:center;gap:8px;background:var(--red);color:#fff;font-weight:700;padding:6px 12px;border-radius:999px;font-size:13px;letter-spacing:.06em}
+.onair i{width:9px;height:9px;border-radius:50%;background:#fff;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.nextlives{margin:12px 0 0;padding:12px 0 0;border-top:1px solid rgba(255,255,255,.12);list-style:none;font-size:13px;display:grid;gap:4px}
+.nextlives li{display:flex;justify-content:space-between;gap:10px;opacity:.8}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer;text-decoration:none;background:var(--ink);color:var(--paper);min-height:42px}
+.btn.red{background:var(--red);color:var(--red-ink)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.light{background:var(--paper);color:var(--ink)}
+.btn.sm{padding:6px 10px;min-height:32px;font-size:13px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+/* sections */
+section.view{padding:24px 0 60px}
+.sechead{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.sechead h2{margin:0;font-size:26px;font-weight:900}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.chip{border:1px solid var(--line);background:var(--card);padding:7px 12px;border-radius:999px;cursor:pointer;font-weight:500;font-size:13px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.field{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 12px;min-height:40px;width:100%}
+.toolbar .field{width:auto;flex:1 1 180px}
+.toolbar select.field{flex:0 1 220px}
+
+/* offer grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+@media (max-width:480px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
+.offer{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow);transition:transform .15s}
+.offer:hover{transform:translateY(-2px)}
+.offer .ph{aspect-ratio:63/88;background:var(--off-soft);position:relative;overflow:hidden}
+.offer .ph img{width:100%;height:100%;object-fit:cover}
+.offer.dim .ph img{filter:grayscale(.8);opacity:.7}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.05em}
+.b-available{background:var(--ok-soft);color:var(--ok)}
+.b-reserved{background:var(--warn-soft);color:var(--warn)}
+.b-sold{background:var(--red-soft);color:var(--red)}
+.b-expired{background:var(--off-soft);color:var(--off)}
+.offer .ph .badge{position:absolute;left:8px;top:8px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.offer .ph .new{left:auto;right:8px;background:var(--red);color:#fff}
+.offer .body{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.offer h3{margin:0;font-size:15px;line-height:1.25;font-weight:700}
+.offer .meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px}
+.offer .price{display:flex;align-items:baseline;gap:8px;margin-top:auto;padding-top:6px}
+.offer .price strong{font-size:20px;font-weight:700}
+.offer .price span{font-size:12px;color:var(--muted)}
+.offer .interest{font-size:12px;color:var(--muted)}
+.offer .btn{width:100%;margin-top:4px}
+@media (max-width:480px){.offer .body{padding:10px}.offer .price strong{font-size:17px}.offer h3{font-size:14px}}
+.empty{text-align:center;padding:48px 16px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:var(--radius)}
+
+/* stepper */
+.orders{display:grid;gap:14px}
+.order{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.order header{display:flex;justify-content:space-between;align-items:start;gap:10px;flex-wrap:wrap}
+.order h3{margin:0;font-size:18px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);margin:18px 0 8px;counter-reset:s}
+.step{position:relative;text-align:center;font-size:12px;color:var(--muted);padding:0 4px}
+.step::before{content:"";position:absolute;top:13px;left:-50%;right:50%;height:3px;background:var(--line);z-index:0}
+.step:first-child::before{display:none}
+.step .dot{position:relative;z-index:1;width:28px;height:28px;border-radius:50%;margin:0 auto 6px;display:grid;place-items:center;background:var(--card);border:2px solid var(--line);font-weight:700;font-size:12px}
+.step.done::before,.step.cur::before{background:var(--red)}
+.step.done .dot{background:var(--red);border-color:var(--red);color:#fff}
+.step.cur .dot{border-color:var(--red);color:var(--red);box-shadow:0 0 0 4px var(--red-soft)}
+.step.done,.step.cur{color:var(--ink)}
+.step b{display:block;font-weight:600}
+.step small{display:block;font-size:11px;color:var(--muted)}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.thumbs img{width:40px;height:56px;border-radius:5px;object-fit:cover;border:1px solid var(--line)}
+.thumbs .more{width:40px;height:56px;border-radius:5px;display:grid;place-items:center;background:var(--off-soft);font-size:12px;font-weight:700;color:var(--muted)}
+details.done-orders summary{cursor:pointer;color:var(--muted);font-weight:600;margin:18px 0 10px}
+
+/* tracking */
+.trackform{display:flex;gap:8px;max-width:520px;margin-bottom:20px}
+.trackform .at{position:relative;flex:1}
+.trackform .at span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600}
+.trackform .at input{padding-left:28px}
+.titem{display:grid;grid-template-columns:64px 1fr;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:10px}
+.titem img{width:64px;height:89px;object-fit:cover;border-radius:6px}
+.titem h3{margin:0 0 4px;font-size:15px}
+.titem .steps{margin:12px 0 0}
+.titem .steps .step{font-size:11px}
+
+/* modal */
+dialog{border:0;border-radius:18px;padding:0;max-width:440px;width:calc(100% - 32px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(20,15,10,.55)}
+.mhead{display:flex;gap:14px;padding:18px 18px 0}
+.mhead img{width:70px;height:98px;object-fit:cover;border-radius:8px;flex:none}
+.mhead h3{margin:0 0 4px;font-size:17px}
+.mbody{padding:18px;display:grid;gap:12px}
+label.lab{display:grid;gap:5px;font-size:13px;font-weight:600}
+label.lab .field{font-weight:400}
+.at-input{position:relative}
+.at-input span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600}
+.at-input input{padding-left:28px}
+.mfoot{display:flex;gap:8px;justify-content:flex-end;padding:0 18px 18px}
+.msg{font-size:13px;padding:10px 12px;border-radius:10px}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.msg.err{background:var(--red-soft);color:var(--red)}
+
+/* admin */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.admintabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.formgrid .full{grid-column:1/-1}
+@media (max-width:560px){.formgrid{grid-template-columns:1fr}}
+.photo-drop{display:flex;gap:12px;align-items:center}
+.photo-drop img{width:64px;height:89px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+.split{display:grid;grid-template-columns:400px 1fr;gap:16px;align-items:start}
+@media (max-width:900px){.split{grid-template-columns:1fr}}
+.rows{display:grid;gap:8px}
+.row{display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.row img{width:48px;height:67px;object-fit:cover;border-radius:5px}
+.row h4{margin:0;font-size:14px}
+.row .ctrl{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.row .ctrl select{min-height:32px;padding:4px 8px;font-size:13px;width:auto}
+.row .acts{display:flex;flex-direction:column;gap:6px}
+.handles{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.handles a{font-size:12px;background:var(--red-soft);color:var(--red);padding:2px 8px;border-radius:999px;text-decoration:none;font-weight:600}
+.client{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.client header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.client ul{margin:8px 0 0;padding-left:18px;font-size:13px}
+.stepbtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.stepbtns .chip{font-size:12px}
+.hint{font-size:12px;color:var(--muted);margin:0}
+footer.site{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--muted);font-size:13px}
+footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(120px);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:10px;font-weight:500;transition:transform .25s;z-index:50;max-width:calc(100% - 32px)}
+.toast{visibility:hidden}
+.toast.show{transform:translateX(-50%) translateY(0);visibility:visible}
+@media (max-width:480px){.livebox::after{width:110px;height:110px;right:-50px;top:-50px}}
+</style>
+</head>
+<body>
+
+<div id="demoBanner" class="demo hidden">Mode démo : données fictives. Renseigne SUPABASE_URL et SUPABASE_ANON_KEY en haut du script pour brancher ta base.</div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#mur"><span class="hanko">直</span><span id="shopName">Direct Japon</span></a>
+    <nav class="tabs" aria-label="Navigation">
+      <a href="#mur" data-view="mur">Le mur</a>
+      <a href="#commandes" data-view="commandes">Commandes groupées</a>
+      <a href="#suivi" data-view="suivi">Suivre ma commande</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero" id="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>Les cartes que tu cherches, <em>trouvées en direct</em> au Japon.</h1>
+      <p class="lead">Pendant le live Instagram, dis-moi ce que tu cherches. Je fouille les boutiques japonaises et j'affiche ici les offres trouvées. Tu réserves avec ton @, sans créer de compte.</p>
+      <ol class="how">
+        <li><b>1</b>Demande en live</li>
+        <li><b>2</b>Choisis sur le mur</li>
+        <li><b>3</b>Réserve avec ton @</li>
+        <li><b>4</b>Suis la commande</li>
+      </ol>
+    </div>
+    <div class="livebox" id="livebox" aria-live="polite"></div>
+  </div>
+</div>
+
+<main class="wrap">
+  <!-- MUR -->
+  <section class="view" id="view-mur">
+    <div class="sechead">
+      <h2>Le mur des offres</h2>
+      <span class="muted small" id="wallCount"></span>
+    </div>
+    <div class="toolbar">
+      <button class="chip" data-filter="available" aria-pressed="true">Disponibles</button>
+      <button class="chip" data-filter="taken" aria-pressed="false">Réservées et vendues</button>
+      <button class="chip" data-filter="all" aria-pressed="false">Toutes</button>
+      <input class="field" id="search" type="search" placeholder="Rechercher une carte, un set…" aria-label="Rechercher">
+      <select class="field" id="liveFilter" aria-label="Filtrer par live"><option value="">Tous les lives</option></select>
+    </div>
+    <div class="grid" id="wall"></div>
+  </section>
+
+  <!-- COMMANDES -->
+  <section class="view hidden" id="view-commandes">
+    <div class="sechead">
+      <h2>Commandes groupées</h2>
+      <span class="muted small">Chaque commande regroupe les cartes d'un ou plusieurs lives.</span>
+    </div>
+    <div class="orders" id="orders"></div>
+  </section>
+
+  <!-- SUIVI -->
+  <section class="view hidden" id="view-suivi">
+    <div class="sechead"><h2>Suivre ma commande</h2></div>
+    <p class="muted">Entre le @instagram utilisé pour réserver et retrouve tes cartes et l'étape de ta commande.</p>
+    <form class="trackform" id="trackForm">
+      <div class="at"><span>@</span><input class="field" id="trackHandle" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="ton_pseudo" aria-label="Pseudo Instagram"></div>
+      <button class="btn red" type="submit">Voir</button>
+    </form>
+    <div id="trackResult"></div>
+  </section>
+
+  <!-- ADMIN -->
+  <section class="view hidden" id="view-admin">
+    <div class="sechead"><h2>Espace admin</h2><button class="btn ghost sm hidden" id="logoutBtn">Se déconnecter</button></div>
+
+    <div id="loginBox" class="panel" style="max-width:420px">
+      <form id="loginForm" class="mbody" style="padding:0">
+        <label class="lab">E-mail<input class="field" type="email" id="loginEmail" autocomplete="username" required></label>
+        <label class="lab">Mot de passe<input class="field" type="password" id="loginPass" autocomplete="current-password" required></label>
+        <div id="loginMsg"></div>
+        <button class="btn red" type="submit">Se connecter</button>
+      </form>
+    </div>
+
+    <div id="adminBox" class="hidden">
+      <div class="admintabs">
+        <button class="chip" data-atab="offres" aria-pressed="true">Offres</button>
+        <button class="chip" data-atab="clients" aria-pressed="false">Réservations</button>
+        <button class="chip" data-atab="groupes" aria-pressed="false">Commandes groupées</button>
+        <button class="chip" data-atab="lives" aria-pressed="false">Lives</button>
+      </div>
+
+      <!-- Offres -->
+      <div data-apane="offres" class="split">
+        <form class="panel" id="offerForm">
+          <h3 style="margin:0 0 12px" id="offerFormTitle">Nouvelle offre</h3>
+          <div class="formgrid">
+            <div class="full photo-drop">
+              <img id="offerPreview" alt="" src="">
+              <div style="flex:1;display:grid;gap:6px">
+                <label class="btn ghost sm" style="cursor:pointer">📷 Photo<input type="file" id="offerFile" accept="image/*" hidden></label>
+                <input class="field" id="offerImageUrl" placeholder="…ou URL de l'image" type="url">
+              </div>
+            </div>
+            <label class="lab full">Nom de la carte *<input class="field" id="oTitle" required placeholder="Pikachu ex SAR"></label>
+            <label class="lab">Set<input class="field" id="oSet" placeholder="SV8a"></label>
+            <label class="lab">Numéro<input class="field" id="oNum" placeholder="232/187"></label>
+            <label class="lab">Langue<input class="field" id="oLang" value="JP"></label>
+            <label class="lab">État
+              <select class="field" id="oCond">
+                <option value="">—</option><option>Mint</option><option>Near Mint</option><option>Excellent</option><option>Good</option><option>Played</option><option>Gradée (voir note)</option>
+              </select>
+            </label>
+            <label class="lab">Prix Japon (¥)<input class="field" id="oJpy" type="number" min="0" inputmode="numeric"></label>
+            <label class="lab">Prix client (€)<input class="field" id="oEur" type="number" min="0" step="0.01" inputmode="decimal"></label>
+            <p class="hint full">Calcul auto du prix client : ¥ × <input id="rate" type="number" step="0.0001" style="width:96px;min-height:34px;padding:4px 8px" class="field" aria-label="Taux JPY vers EUR"> × (1 + <input id="markup" type="number" step="1" style="width:64px;min-height:34px;padding:4px 8px" class="field" aria-label="Marge en pourcent"> %)</p>
+            <label class="lab full">Live<select class="field" id="oLive"></select></label>
+            <label class="lab full">🔒 Lien vendeur japonais (privé)<input class="field" id="oSource" type="url" placeholder="https://jp.mercari.com/…"></label>
+            <label class="lab">🔒 Prix d'achat réel (¥)<input class="field" id="oCost" type="number" min="0"></label>
+            <label class="lab">🔒 Note privée<input class="field" id="oNote"></label>
+          </div>
+          <div id="offerMsg" style="margin-top:10px"></div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn red" type="submit" id="offerSubmit" style="flex:1">Publier sur le mur</button>
+            <button class="btn ghost hidden" type="button" id="offerCancel">Annuler</button>
+          </div>
+        </form>
+        <div>
+          <div class="toolbar"><input class="field" id="adminSearch" type="search" placeholder="Filtrer les offres…"></div>
+          <div class="rows" id="adminOffers"></div>
+        </div>
+      </div>
+
+      <!-- Réservations -->
+      <div data-apane="clients" class="hidden">
+        <div class="toolbar">
+          <button class="btn ghost sm" id="copyHandles">Copier tous les @</button>
+          <span class="hint">Clique un @ pour ouvrir la conversation Instagram.</span>
+        </div>
+        <div class="rows" id="adminClients"></div>
+      </div>
+
+      <!-- Commandes groupées -->
+      <div data-apane="groupes" class="hidden split">
+        <form class="panel" id="groupForm">
+          <h3 style="margin:0 0 12px">Nouvelle commande groupée</h3>
+          <label class="lab">Nom<input class="field" id="gName" required placeholder="Commande #3 · lives de septembre"></label>
+          <button class="btn red" type="submit" style="margin-top:12px;width:100%">Créer</button>
+        </form>
+        <div class="rows" id="adminGroups"></div>
+      </div>
+
+      <!-- Lives -->
+      <div data-apane="lives" class="hidden split">
+        <form class="panel" id="liveForm">
+          <h3 style="margin:0 0 12px">Programmer un live</h3>
+          <div class="formgrid">
+            <label class="lab full">Titre<input class="field" id="lTitle" required placeholder="Chasse aux SAR japonaises"></label>
+            <label class="lab">Date et heure<input class="field" id="lStart" type="datetime-local" required></label>
+            <label class="lab">Durée (min)<input class="field" id="lDur" type="number" value="90" min="5"></label>
+            <label class="lab full">Lien Instagram<input class="field" id="lUrl" type="url" placeholder="https://instagram.com/ton_compte"></label>
+          </div>
+          <button class="btn red" type="submit" style="margin-top:12px;width:100%">Ajouter</button>
+        </form>
+        <div class="rows" id="adminLives"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>Prix affichés en euros, estimés à partir du prix japonais. Réserver ne vaut pas paiement : je te contacte en DM pour confirmer.</span>
+    <span><a id="igLink" href="#" target="_blank" rel="noopener">Instagram</a> · <a href="#admin">Admin</a></span>
+  </div>
+</footer>
+
+<dialog id="reserveDlg">
+  <form method="dialog" id="reserveForm">
+    <div class="mhead" id="reserveHead"></div>
+    <div class="mbody">
+      <label class="lab">Ton @instagram
+        <div class="at-input"><span>@</span><input class="field" id="rHandle" required autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="ton_pseudo" maxlength="31"></div>
+      </label>
+      <label class="lab"><span>Un mot ? <span class="muted" style="font-weight:400">(facultatif)</span></span>
+        <textarea class="field" id="rNote" rows="2" maxlength="280" placeholder="Ex : je prends aussi la version holo si dispo"></textarea>
+      </label>
+      <div id="reserveMsg"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn ghost" value="cancel" formnovalidate id="reserveCancel">Fermer</button>
+      <button class="btn red" id="reserveSubmit" value="default">Je la veux</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* =========================================================
+   CONFIGURATION : à remplir avec les infos de ton projet
+   Supabase > Project Settings > API
+   ========================================================= */
+const SUPABASE_URL      = "https://VOTRE-PROJET.supabase.co";
+const SUPABASE_ANON_KEY = "VOTRE_CLE_ANON_PUBLIQUE";
+const SHOP_NAME         = "Direct Japon";
+const INSTAGRAM_HANDLE  = "ton_compte";   // sans le @
+/* ========================================================= */
+
+const CONFIGURED = !SUPABASE_URL.includes("VOTRE") && !SUPABASE_ANON_KEY.includes("VOTRE");
+const STEPS = ["Commande", "Préparation", "Livraison", "Livrée"];
+const STATUS_LABEL = { available: "Disponible", reserved: "Réservée", sold: "Vendue", expired: "Plus dispo" };
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+const eur = n => n == null || n === "" ? "" : new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR" }).format(n);
+const yen = n => n == null || n === "" ? "" : new Intl.NumberFormat("fr-BE").format(n) + " ¥";
+const fmtDate = d => new Intl.DateTimeFormat("fr-BE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(d));
+const fmtDay = d => new Intl.DateTimeFormat("fr-BE", { day: "numeric", month: "short" }).format(new Date(d));
+const normHandle = h => String(h || "").trim().replace(/^@+/, "").toLowerCase();
+const validHandle = h => /^[a-z0-9._]{1,30}$/.test(h);
+
+function toast(t) {
+  const el = $("#toast"); el.textContent = t; el.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove("show"), 2600);
+}
+
+/* Visuel de remplacement quand une offre n'a pas de photo */
+function placeholder(title) {
+  const txt = esc((title || "?").slice(0, 22));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 630 880"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2622"/><stop offset="1" stop-color="#4a2a22"/></linearGradient></defs><rect width="630" height="880" rx="30" fill="url(#g)"/><rect x="30" y="30" width="570" height="820" rx="20" fill="none" stroke="#c8341f" stroke-width="6"/><circle cx="315" cy="360" r="110" fill="#c8341f"/><text x="315" y="400" font-size="110" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="900">直</text><text x="315" y="620" font-size="40" text-anchor="middle" fill="#f2ede6" font-family="sans-serif" font-weight="700">${txt}</text></svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+const img = o => o.image_url || placeholder(o.title);
+
+/* =========================================================
+   Accès aux données : Supabase, ou démo en mémoire
+   ========================================================= */
+function makeSupabaseApi() {
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const OFFER_COLS = "id,title,card_set,card_number,language,condition,price_jpy,price_eur,image_url,status,live_id,group_order_id,created_at";
+  const ok = ({ data, error }) => { if (error) throw error; return data; };
+  return {
+    demo: false,
+    offers: async () => ok(await sb.from("offers").select(OFFER_COLS).order("created_at", { ascending: false }).limit(1000)),
+    counts: async () => Object.fromEntries(ok(await sb.rpc("interest_counts")).map(r => [r.offer_id, r.n])),
+    lives: async () => ok(await sb.from("lives").select("*").order("starts_at")),
+    orders: async () => ok(await sb.from("group_orders").select("*").order("created_at", { ascending: false })),
+    async addInterest(offer_id, handle, note) {
+      const { error } = await sb.from("interests").insert({ offer_id, handle, note: note || null });
+      if (error && error.code === "23505") return "dup";
+      if (error) throw error;
+      return "ok";
+    },
+    track: async h => ok(await sb.rpc("track_handle", { h })),
+    // auth
+    async session() { const { data } = await sb.auth.getSession(); return data.session; },
+    async signIn(email, password) { const { error } = await sb.auth.signInWithPassword({ email, password }); if (error) throw error; },
+    async signOut() { await sb.auth.signOut(); },
+    isAdmin: async () => ok(await sb.rpc("is_admin")) === true,
+    // admin
+    interests: async () => ok(await sb.from("interests").select("*").order("created_at", { ascending: false }).limit(5000)),
+    async getPrivate(id) { return ok(await sb.from("offer_private").select("*").eq("offer_id", id).maybeSingle()) || {}; },
+    async saveOffer(id, pub, priv) {
+      let row;
+      if (id) row = ok(await sb.from("offers").update(pub).eq("id", id).select().single());
+      else row = ok(await sb.from("offers").insert(pub).select().single());
+      ok(await sb.from("offer_private").upsert({ offer_id: row.id, ...priv }));
+      return row;
+    },
+    patchOffer: async (id, patch) => ok(await sb.from("offers").update(patch).eq("id", id)),
+    patchOffers: async (ids, patch) => ok(await sb.from("offers").update(patch).in("id", ids)),
+    deleteOffer: async id => ok(await sb.from("offers").delete().eq("id", id)),
+    deleteInterest: async id => ok(await sb.from("interests").delete().eq("id", id)),
+    addOrder: async name => ok(await sb.from("group_orders").insert({ name })),
+    patchOrder: async (id, patch) => ok(await sb.from("group_orders").update(patch).eq("id", id)),
+    deleteOrder: async id => ok(await sb.from("group_orders").delete().eq("id", id)),
+    addLive: async l => ok(await sb.from("lives").insert(l)),
+    deleteLive: async id => ok(await sb.from("lives").delete().eq("id", id)),
+    async upload(file) {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const path = `${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${ext}`;
+      ok(await sb.storage.from("offer-images").upload(path, file, { contentType: file.type, upsert: false }));
+      return sb.storage.from("offer-images").getPublicUrl(path).data.publicUrl;
+    },
+    subscribe(tables, cb) {
+      let ch = sb.channel("rt-" + Math.random().toString(36).slice(2));
+      tables.forEach(t => { ch = ch.on("postgres_changes", { event: "*", schema: "public", table: t }, cb); });
+      ch.subscribe();
+      return () => sb.removeChannel(ch);
+    }
+  };
+}
+
+function makeDemoApi() {
+  const now = Date.now(), H = 3600e3, D = 24 * H;
+  const lives = [
+    { id: "l1", title: "Chasse aux SAR japonaises", starts_at: new Date(now - 6 * D).toISOString(), duration_min: 90, url: "" },
+    { id: "l2", title: "Spécial Terastal Festival", starts_at: new Date(now + 2 * D + 3 * H).toISOString(), duration_min: 90, url: "" },
+    { id: "l3", title: "Vos demandes : cartes promo", starts_at: new Date(now + 9 * D).toISOString(), duration_min: 60, url: "" }
+  ];
+  const orders = [
+    { id: "g1", name: "Commande #1 · lives d'août", step: 3, step_dates: { 0: new Date(now - 40 * D).toISOString(), 1: new Date(now - 35 * D).toISOString(), 2: new Date(now - 30 * D).toISOString(), 3: new Date(now - 21 * D).toISOString() }, tracking: "", created_at: new Date(now - 40 * D).toISOString() },
+    { id: "g2", name: "Commande #2 · live du " + fmtDay(now - 6 * D), step: 1, step_dates: { 0: new Date(now - 5 * D).toISOString(), 1: new Date(now - 2 * D).toISOString() }, tracking: "", created_at: new Date(now - 5 * D).toISOString() }
+  ];
+  const mk = (id, title, card_set, card_number, condition, jpy, eurv, status, live_id, group_order_id, ago) =>
+    ({ id, title, card_set, card_number, language: "JP", condition, price_jpy: jpy, price_eur: eurv, image_url: "", status, live_id, group_order_id, created_at: new Date(now - ago).toISOString() });
+  const offers = [
+    mk("o1", "Pikachu ex SAR", "SV8a", "232/187", "Near Mint", 14800, 112, "available", "l1", null, 2 * H),
+    mk("o2", "Évoli ex SAR", "SV8a", "224/187", "Mint", 9800, 74, "available", "l1", null, 3 * H),
+    mk("o3", "Dracaufeu ex SAR", "SV2a", "201/165", "Near Mint", 18500, 139, "reserved", "l1", "g2", 6 * D),
+    mk("o4", "Mew ex UR", "SV2a", "208/165", "Excellent", 4200, 32, "available", "l1", null, 6 * D),
+    mk("o5", "Lillie's Clefairy ex SAR", "SV9", "130/100", "Near Mint", 12800, 96, "sold", "l1", "g2", 6 * D),
+    mk("o6", "Mimiqui AR", "SV8a", "198/187", "Mint", 1800, 14.5, "available", "l1", null, 6 * D)
+  ];
+  const interests = [
+    { id: "i1", offer_id: "o3", handle: "sacha.collec", note: "", created_at: new Date(now - 6 * D).toISOString() },
+    { id: "i2", offer_id: "o5", handle: "sacha.collec", note: "", created_at: new Date(now - 6 * D).toISOString() },
+    { id: "i3", offer_id: "o1", handle: "ondine_tcg", note: "", created_at: new Date(now - H).toISOString() }
+  ];
+  return {
+    demo: true,
+    offers: async () => offers.slice().sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    counts: async () => interests.reduce((m, i) => (m[i.offer_id] = (m[i.offer_id] || 0) + 1, m), {}),
+    lives: async () => lives.slice().sort((a, b) => a.starts_at.localeCompare(b.starts_at)),
+    orders: async () => orders.slice(),
+    async addInterest(offer_id, handle, note) {
+      if (interests.some(i => i.offer_id === offer_id && i.handle === handle)) return "dup";
+      interests.push({ id: "i" + Math.random(), offer_id, handle, note, created_at: new Date().toISOString() });
+      return "ok";
+    },
+    async track(h) {
+      return interests.filter(i => i.handle === normHandle(h)).map(i => {
+        const o = offers.find(x => x.id === i.offer_id) || {}; const g = orders.find(x => x.id === o.group_order_id);
+        return { offer_id: o.id, title: o.title, card_set: o.card_set, card_number: o.card_number, image_url: o.image_url, price_eur: o.price_eur, status: o.status, interested_at: i.created_at, group_order_id: g?.id || null, group_name: g?.name || null, step: g?.step ?? null, step_dates: g?.step_dates || null, tracking: g?.tracking || null };
+      });
+    },
+    async session() { return null; },
+    async signIn() { throw new Error("L'espace admin nécessite la configuration Supabase."); },
+    async signOut() {},
+    subscribe() { return () => {}; }
+  };
+}
+
+let api;
+try { api = CONFIGURED && window.supabase ? makeSupabaseApi() : makeDemoApi(); }
+catch (e) { console.error(e); api = makeDemoApi(); }
+
+/* =========================================================
+   État et rendu public
+   ========================================================= */
+const S = { offers: [], counts: {}, lives: [], orders: [], filter: "available", q: "", live: "" };
+
+async function loadPublic() {
+  try {
+    const [offers, counts, lives, orders] = await Promise.all([api.offers(), api.counts(), api.lives(), api.orders()]);
+    Object.assign(S, { offers, counts, lives, orders });
+  } catch (e) { console.error(e); toast("Impossible de charger les données."); }
+  renderLiveFilter(); renderWall(); renderOrders(); renderLivebox();
+  if (Admin.on) Admin.render();
+}
+let reloadT;
+const scheduleReload = () => { clearTimeout(reloadT); reloadT = setTimeout(loadPublic, 400); };
+
+function renderLiveFilter() {
+  const sel = $("#liveFilter"), cur = sel.value;
+  const past = S.lives.filter(l => new Date(l.starts_at) <= new Date()).reverse();
+  sel.innerHTML = `<option value="">Tous les lives</option>` + past.map(l => `<option value="${esc(l.id)}">${esc(fmtDay(l.starts_at))} · ${esc(l.title)}</option>`).join("");
+  sel.value = past.some(l => l.id === cur) ? cur : "";
+}
+
+function renderWall() {
+  const q = S.q.trim().toLowerCase();
+  const list = S.offers.filter(o => {
+    if (S.filter === "available" && o.status !== "available") return false;
+    if (S.filter === "taken" && !["reserved", "sold"].includes(o.status)) return false;
+    if (S.filter !== "all" && o.status === "expired") return false;
+    if (S.live && o.live_id !== S.live) return false;
+    if (q && !`${o.title} ${o.card_set} ${o.card_number}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  $("#wallCount").textContent = `${list.length} offre${list.length > 1 ? "s" : ""}`;
+  if (!list.length) {
+    $("#wall").innerHTML = `<div class="empty" style="grid-column:1/-1">${S.offers.length ? "Aucune offre ne correspond à ce filtre." : "Le mur est vide pour l'instant. Rendez-vous au prochain live !"}</div>`;
+    return;
+  }
+  const fresh = Date.now() - 12 * 3600e3;
+  $("#wall").innerHTML = list.map(o => {
+    const n = S.counts[o.id] || 0, avail = o.status === "available";
+    return `<article class="offer ${avail ? "" : "dim"}">
+      <div class="ph"><img loading="lazy" src="${esc(img(o))}" alt="${esc(o.title)}">
+        <span class="badge b-${esc(o.status)}">${esc(STATUS_LABEL[o.status] || o.status)}</span>
+        ${avail && new Date(o.created_at) > fresh ? `<span class="badge new">Nouveau</span>` : ""}</div>
+      <div class="body">
+        <h3>${esc(o.title)}</h3>
+        <div class="meta">${[o.card_set, o.card_number, o.language, o.condition].filter(Boolean).map(esc).join(" · ")}</div>
+        <div class="price"><strong>${esc(eur(o.price_eur)) || "Prix en DM"}</strong><span>${esc(yen(o.price_jpy))}</span></div>
+        <div class="interest">${n ? `${n} personne${n > 1 ? "s" : ""} intéressée${n > 1 ? "s" : ""}` : "&nbsp;"}</div>
+        ${avail ? `<button class="btn red" data-reserve="${esc(o.id)}">Je la veux</button>` : ""}
+      </div></article>`;
+  }).join("");
+}
+
+function stepper(step, dates) {
+  return `<div class="steps">${STEPS.map((s, i) => {
+    const cls = i < step || step === 3 ? "done" : i === step ? "cur" : "";
+    const d = dates && dates[i] ? fmtDay(dates[i]) : "";
+    return `<div class="step ${cls}"><div class="dot">${i < step || step === 3 ? "✓" : i + 1}</div><b>${s}</b><small>${esc(d) || "&nbsp;"}</small></div>`;
+  }).join("")}</div>`;
+}
+
+function renderOrders() {
+  const byOrder = {};
+  S.offers.forEach(o => { if (o.group_order_id) (byOrder[o.group_order_id] ||= []).push(o); });
+  const card = g => {
+    const items = byOrder[g.id] || [];
+    return `<article class="order"><header><div><h3>${esc(g.name)}</h3>
+      <span class="muted small">${items.length} carte${items.length > 1 ? "s" : ""} · ouverte le ${esc(fmtDay(g.created_at))}</span></div>
+      <span class="badge ${g.step === 3 ? "b-available" : "b-reserved"}">${esc(STEPS[g.step])}</span></header>
+      ${stepper(g.step, g.step_dates)}
+      ${g.tracking ? `<p class="small">Suivi colis : <strong>${esc(g.tracking)}</strong></p>` : ""}
+      ${g.note ? `<p class="small muted">${esc(g.note)}</p>` : ""}
+      <div class="thumbs">${items.slice(0, 12).map(o => `<img src="${esc(img(o))}" alt="${esc(o.title)}" title="${esc(o.title)}" loading="lazy">`).join("")}${items.length > 12 ? `<span class="more">+${items.length - 12}</span>` : ""}</div>
+    </article>`;
+  };
+  const active = S.orders.filter(g => g.step < 3), done = S.orders.filter(g => g.step === 3);
+  $("#orders").innerHTML = (active.length ? active.map(card).join("") : `<div class="empty">Aucune commande en cours.</div>`)
+    + (done.length ? `<details class="done-orders"><summary>Commandes livrées (${done.length})</summary><div class="orders">${done.map(card).join("")}</div></details>` : "");
+}
+
+/* ---------- Compte à rebours des lives ---------- */
+function liveState() {
+  const t = Date.now();
+  const onAir = S.lives.find(l => { const s = +new Date(l.starts_at); return s <= t && t < s + (l.duration_min || 90) * 60e3; });
+  const upcoming = S.lives.filter(l => +new Date(l.starts_at) > t);
+  return { onAir, next: upcoming[0], later: upcoming.slice(1, 4) };
+}
+const igUrl = l => (l && l.url) || `https://instagram.com/${INSTAGRAM_HANDLE}`;
+let lastLiveKey = "";
+function renderLivebox() {
+  const { onAir, next, later } = liveState();
+  const key = (onAir?.id || "") + "|" + (next?.id || "") + "|" + later.map(l => l.id).join(",");
+  const box = $("#livebox");
+  if (key !== lastLiveKey) {
+    lastLiveKey = key;
+    const laterHtml = later.length ? `<ul class="nextlives">${later.map(l => `<li><span>${esc(l.title)}</span><span>${esc(fmtDate(l.starts_at))}</span></li>`).join("")}</ul>` : "";
+    if (onAir) {
+      box.innerHTML = `<span class="onair"><i></i>EN DIRECT</span>
+        <div class="ltitle" style="margin-top:12px">${esc(onAir.title)}</div>
+        <div class="ldate">Dis-moi en commentaire les cartes que tu cherches.</div>
+        <p style="margin:16px 0 0"><a class="btn red" href="${esc(igUrl(onAir))}" target="_blank" rel="noopener">Rejoindre le live</a></p>
+        ${next ? `<ul class="nextlives"><li><span>Ensuite : ${esc(next.title)}</span><span>${esc(fmtDate(next.starts_at))}</span></li></ul>` : ""}`;
+    } else if (next) {
+      box.innerHTML = `<div class="label">Prochain live Instagram</div>
+        <div class="ltitle">${esc(next.title)}</div><div class="ldate">${esc(fmtDate(next.starts_at))}</div>
+        <div class="count" id="count">${["jours", "heures", "min", "sec"].map(u => `<div><strong>--</strong><span>${u}</span></div>`).join("")}</div>
+        <a class="btn light" href="${esc(igUrl(next))}" target="_blank" rel="noopener">Suivre sur Instagram</a>${laterHtml}`;
+    } else {
+      box.innerHTML = `<div class="label">Prochain live</div><div class="ltitle">Bientôt annoncé</div>
+        <div class="ldate">Abonne-toi pour être prévenu.</div>
+        <p style="margin:16px 0 0"><a class="btn light" href="${esc(igUrl())}" target="_blank" rel="noopener">@${esc(INSTAGRAM_HANDLE)}</a></p>`;
+    }
+  }
+  if (!onAir && next) {
+    let s = Math.max(0, Math.floor((new Date(next.starts_at) - Date.now()) / 1000));
+    const parts = [Math.floor(s / 86400), Math.floor(s % 86400 / 3600), Math.floor(s % 3600 / 60), s % 60];
+    $$("#count strong").forEach((el, i) => { el.textContent = String(parts[i]).padStart(2, "0"); });
+  }
+}
+
+/* ---------- Réservation ---------- */
+const dlg = $("#reserveDlg");
+let reserveId = null;
+function openReserve(id) {
+  const o = S.offers.find(x => x.id === id); if (!o) return;
+  reserveId = id;
+  $("#reserveHead").innerHTML = `<img src="${esc(img(o))}" alt=""><div><h3>${esc(o.title)}</h3>
+    <div class="muted small">${[o.card_set, o.card_number, o.condition].filter(Boolean).map(esc).join(" · ")}</div>
+    <div style="margin-top:6px"><strong style="font-size:18px">${esc(eur(o.price_eur))}</strong> <span class="muted small">${esc(yen(o.price_jpy))}</span></div></div>`;
+  $("#rHandle").value = store.get("jl_handle", "");
+  $("#rNote").value = ""; $("#reserveMsg").innerHTML = "";
+  $("#reserveSubmit").disabled = false; $("#reserveSubmit").classList.remove("hidden");
+  $("#reserveCancel").textContent = "Fermer";
+  dlg.showModal();
+  if (!$("#rHandle").value) $("#rHandle").focus();
+}
+$("#reserveForm").addEventListener("submit", async e => {
+  if (e.submitter && e.submitter.value === "cancel") return;
+  e.preventDefault();
+  const h = normHandle($("#rHandle").value), msg = $("#reserveMsg");
+  if (!validHandle(h)) { msg.innerHTML = `<div class="msg err">Ce @ ne semble pas valide (lettres, chiffres, points et _ uniquement).</div>`; return; }
+  $("#reserveSubmit").disabled = true;
+  try {
+    const r = await api.addInterest(reserveId, h, $("#rNote").value.trim());
+    store.set("jl_handle", h);
+    msg.innerHTML = r === "dup"
+      ? `<div class="msg ok">C'est déjà noté pour @${esc(h)} 👍</div>`
+      : `<div class="msg ok">C'est noté, @${esc(h)} ! Je t'écris en DM sur Instagram pour confirmer.</div>`;
+    $("#reserveSubmit").classList.add("hidden"); $("#reserveCancel").textContent = "OK";
+    if (r === "ok") { S.counts[reserveId] = (S.counts[reserveId] || 0) + 1; renderWall(); }
+  } catch (err) {
+    console.error(err);
+    msg.innerHTML = `<div class="msg err">Oups, ça n'a pas marché. Cette offre n'est peut-être plus disponible : réessaie ou écris-moi en DM.</div>`;
+    $("#reserveSubmit").disabled = false; scheduleReload();
+  }
+});
+$("#wall").addEventListener("click", e => { const b = e.target.closest("[data-reserve]"); if (b) openReserve(b.dataset.reserve); });
+
+/* ---------- Suivi client ---------- */
+$("#trackForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const h = normHandle($("#trackHandle").value), out = $("#trackResult");
+  if (!validHandle(h)) { out.innerHTML = `<div class="msg err">Entre un @instagram valide.</div>`; return; }
+  out.innerHTML = `<p class="muted">Recherche…</p>`;
+  try {
+    const rows = await api.track(h);
+    store.set("jl_handle", h);
+    if (!rows.length) { out.innerHTML = `<div class="empty">Aucune réservation trouvée pour @${esc(h)}.</div>`; return; }
+    out.innerHTML = `<p class="muted small">${rows.length} carte${rows.length > 1 ? "s" : ""} pour @${esc(h)}</p>` + rows.map(r => `
+      <div class="titem"><img src="${esc(img(r))}" alt="">
+        <div><h3>${esc(r.title)}</h3>
+          <div class="muted small">${[r.card_set, r.card_number].filter(Boolean).map(esc).join(" · ")} ${r.price_eur != null ? "· " + esc(eur(r.price_eur)) : ""}</div>
+          <div style="margin-top:6px">${r.group_order_id
+            ? `<span class="small">📦 ${esc(r.group_name)}</span>${r.tracking ? `<span class="small muted"> · suivi ${esc(r.tracking)}</span>` : ""}${stepper(r.step, r.step_dates)}`
+            : r.status === "expired"
+              ? `<span class="badge b-expired">Plus disponible</span>`
+              : `<span class="badge b-${esc(r.status)}">${r.status === "available" ? "Demande reçue" : esc(STATUS_LABEL[r.status])}</span> <span class="small muted">en attente d'une commande groupée</span>`}</div>
+        </div></div>`).join("");
+  } catch (err) { console.error(err); out.innerHTML = `<div class="msg err">Recherche impossible pour le moment.</div>`; }
+});
+
+/* =========================================================
+   Espace admin
+   ========================================================= */
+const Admin = {
+  on: false, interests: [], editing: null, unsub: null, file: null,
+  async enter() {
+    if (api.demo) { $("#loginMsg").innerHTML = `<div class="msg err">L'espace admin fonctionne une fois Supabase configuré (voir le guide).</div>`; return; }
+    const s = await api.session();
+    if (!s) return this.showLogin();
+    let ok = false; try { ok = await api.isAdmin(); } catch (e) { console.error(e); }
+    if (!ok) { await api.signOut(); return this.showLogin("Ce compte n'est pas administrateur (voir la dernière étape du script SQL)."); }
+    this.on = true;
+    $("#loginBox").classList.add("hidden"); $("#adminBox").classList.remove("hidden"); $("#logoutBtn").classList.remove("hidden");
+    if (!this.unsub) this.unsub = api.subscribe(["interests"], () => this.loadInterests());
+    this.fillRate(); this.resetOfferForm();
+    await this.loadInterests();
+  },
+  showLogin(err) {
+    this.on = false;
+    $("#loginBox").classList.remove("hidden"); $("#adminBox").classList.add("hidden"); $("#logoutBtn").classList.add("hidden");
+    $("#loginMsg").innerHTML = err ? `<div class="msg err">${esc(err)}</div>` : "";
+  },
+  async loadInterests() { try { this.interests = await api.interests(); } catch (e) { console.error(e); } this.render(); },
+  render() { if (!this.on) return; this.renderOffers(); this.renderClients(); this.renderGroups(); this.renderLives(); this.renderLiveSelect(); },
+  handlesFor(id) { return this.interests.filter(i => i.offer_id === id); },
+  renderLiveSelect() {
+    const sel = $("#oLive"), cur = sel.value;
+    const { onAir, next } = liveState();
+    sel.innerHTML = `<option value="">Aucun</option>` + S.lives.slice().reverse().map(l => `<option value="${esc(l.id)}">${esc(fmtDay(l.starts_at))} · ${esc(l.title)}</option>`).join("");
+    const def = onAir?.id || [...S.lives].reverse().find(l => new Date(l.starts_at) <= new Date())?.id || next?.id || "";
+    sel.value = cur && S.lives.some(l => l.id === cur) ? cur : (this.editing ? "" : def);
+  },
+  renderOffers() {
+    const q = ($("#adminSearch").value || "").toLowerCase();
+    const opts = sel => `<option value="">Pas de commande</option>` + S.orders.map(g => `<option value="${esc(g.id)}" ${g.id === sel ? "selected" : ""}>${esc(g.name)}</option>`).join("");
+    const list = S.offers.filter(o => !q || `${o.title} ${o.card_set} ${o.card_number}`.toLowerCase().includes(q));
+    $("#adminOffers").innerHTML = list.length ? list.map(o => {
+      const hs = this.handlesFor(o.id);
+      return `<div class="row"><img src="${esc(img(o))}" alt="">
+        <div><h4>${esc(o.title)}</h4><div class="muted small">${[o.card_set, o.card_number].filter(Boolean).map(esc).join(" · ")} · ${esc(eur(o.price_eur))} · ${esc(yen(o.price_jpy))}</div>
+          <div class="ctrl">
+            <select class="field" data-status="${esc(o.id)}" aria-label="Statut">${Object.entries(STATUS_LABEL).map(([k, v]) => `<option value="${k}" ${k === o.status ? "selected" : ""}>${v}</option>`).join("")}</select>
+            <select class="field" data-group="${esc(o.id)}" aria-label="Commande groupée">${opts(o.group_order_id)}</select>
+          </div>
+          ${hs.length ? `<div class="handles">${hs.map(i => `<a href="https://ig.me/m/${esc(i.handle)}" target="_blank" rel="noopener" title="${esc(i.note || "")}">@${esc(i.handle)}${i.note ? " 💬" : ""}</a>`).join("")}</div>` : ""}
+        </div>
+        <div class="acts"><button class="btn ghost sm" data-edit="${esc(o.id)}">Modifier</button><button class="btn ghost sm" data-del="${esc(o.id)}">Suppr.</button></div></div>`;
+    }).join("") : `<div class="empty">Aucune offre.</div>`;
+  },
+  renderClients() {
+    const byH = {};
+    this.interests.forEach(i => (byH[i.handle] ||= []).push(i));
+    const hs = Object.keys(byH).sort((a, b) => byH[b][0].created_at.localeCompare(byH[a][0].created_at));
+    $("#adminClients").innerHTML = hs.length ? hs.map(h => {
+      const items = byH[h].map(i => ({ i, o: S.offers.find(o => o.id === i.offer_id) })).filter(x => x.o);
+      const total = items.reduce((s, x) => s + (+x.o.price_eur || 0), 0);
+      return `<div class="client"><header><a class="btn sm red" href="https://ig.me/m/${esc(h)}" target="_blank" rel="noopener">@${esc(h)}</a>
+        <span class="small muted">${items.length} carte${items.length > 1 ? "s" : ""} · ${esc(eur(total))}</span></header>
+        <ul>${items.map(({ i, o }) => `<li>${esc(o.title)} <span class="badge b-${esc(o.status)}">${esc(STATUS_LABEL[o.status])}</span>${i.note ? ` <span class="muted">« ${esc(i.note)} »</span>` : ""}
+          ${o.status === "available" ? `<button class="btn ghost sm" data-confirm="${esc(o.id)}" style="margin-left:4px">Réserver pour lui</button>` : ""}
+          <button class="btn ghost sm" data-delint="${esc(i.id)}" title="Retirer cette demande">✕</button></li>`).join("")}</ul></div>`;
+    }).join("") : `<div class="empty">Aucune réservation pour l'instant.</div>`;
+  },
+  renderGroups() {
+    $("#adminGroups").innerHTML = S.orders.length ? S.orders.map(g => {
+      const n = S.offers.filter(o => o.group_order_id === g.id).length;
+      return `<div class="client"><header><strong>${esc(g.name)}</strong><span class="small muted">${n} carte${n > 1 ? "s" : ""}</span></header>
+        <div class="stepbtns">${STEPS.map((s, i) => `<button class="chip" data-step="${esc(g.id)}" data-i="${i}" aria-pressed="${i === g.step}">${i + 1}. ${s}</button>`).join("")}</div>
+        <div class="formgrid" style="margin-top:10px">
+          <label class="lab">N° de suivi<input class="field" data-track="${esc(g.id)}" value="${esc(g.tracking || "")}"></label>
+          <label class="lab">Message public<input class="field" data-note="${esc(g.id)}" value="${esc(g.note || "")}"></label>
+        </div>
+        <div class="stepbtns"><button class="btn ghost sm" data-attach="${esc(g.id)}">+ Ajouter toutes les réservées sans commande</button>
+          <button class="btn ghost sm" data-delgroup="${esc(g.id)}">Supprimer</button></div></div>`;
+    }).join("") : `<div class="empty">Aucune commande groupée.</div>`;
+  },
+  renderLives() {
+    $("#adminLives").innerHTML = S.lives.length ? S.lives.slice().reverse().map(l => `<div class="client"><header>
+      <div><strong>${esc(l.title)}</strong><div class="small muted">${esc(fmtDate(l.starts_at))} · ${esc(l.duration_min)} min</div></div>
+      <button class="btn ghost sm" data-dellive="${esc(l.id)}">Supprimer</button></header></div>`).join("") : `<div class="empty">Aucun live programmé.</div>`;
+  },
+  fillRate() { $("#rate").value = store.get("jl_rate", 0.0062); $("#markup").value = store.get("jl_markup", 25); },
+  calcEur() {
+    const jpy = +$("#oJpy").value, rate = +$("#rate").value, mk = +$("#markup").value;
+    if (jpy > 0 && rate > 0) $("#oEur").value = (Math.ceil(jpy * rate * (1 + mk / 100) * 2) / 2).toFixed(2);
+  },
+  resetOfferForm() {
+    this.editing = null; this.file = null;
+    $("#offerForm").reset(); this.fillRate(); $("#oLang").value = "JP";
+    $("#offerPreview").src = placeholder("Photo");
+    $("#offerFormTitle").textContent = "Nouvelle offre"; $("#offerSubmit").textContent = "Publier sur le mur";
+    $("#offerCancel").classList.add("hidden"); $("#offerMsg").innerHTML = "";
+    this.renderLiveSelect();
+  },
+  async editOffer(id) {
+    const o = S.offers.find(x => x.id === id); if (!o) return;
+    this.editing = id; this.file = null;
+    const p = await api.getPrivate(id).catch(() => ({}));
+    $("#oTitle").value = o.title || ""; $("#oSet").value = o.card_set || ""; $("#oNum").value = o.card_number || "";
+    $("#oLang").value = o.language || ""; $("#oCond").value = o.condition || ""; $("#oJpy").value = o.price_jpy ?? "";
+    $("#oEur").value = o.price_eur ?? ""; $("#offerImageUrl").value = o.image_url || ""; $("#offerPreview").src = img(o);
+    this.renderLiveSelect(); $("#oLive").value = o.live_id || "";
+    $("#oSource").value = p.source_url || ""; $("#oCost").value = p.cost_jpy ?? ""; $("#oNote").value = p.admin_note || "";
+    $("#offerFormTitle").textContent = "Modifier l'offre"; $("#offerSubmit").textContent = "Enregistrer";
+    $("#offerCancel").classList.remove("hidden"); $("#offerMsg").innerHTML = "";
+    $("#offerForm").scrollIntoView({ behavior: "smooth", block: "start" });
+  },
+  async submitOffer() {
+    const btn = $("#offerSubmit"); btn.disabled = true; $("#offerMsg").innerHTML = "";
+    try {
+      let image_url = $("#offerImageUrl").value.trim() || null;
+      if (this.file) { btn.textContent = "Envoi de la photo…"; image_url = await api.upload(this.file); }
+      const num = v => v === "" ? null : +v;
+      const pub = {
+        title: $("#oTitle").value.trim(), card_set: $("#oSet").value.trim() || null, card_number: $("#oNum").value.trim() || null,
+        language: $("#oLang").value.trim() || null, condition: $("#oCond").value || null,
+        price_jpy: num($("#oJpy").value), price_eur: num($("#oEur").value), image_url, live_id: $("#oLive").value || null
+      };
+      const priv = { source_url: $("#oSource").value.trim() || null, cost_jpy: num($("#oCost").value), admin_note: $("#oNote").value.trim() || null };
+      await api.saveOffer(this.editing, pub, priv);
+      toast(this.editing ? "Offre mise à jour" : "Offre publiée sur le mur ✓");
+      this.resetOfferForm(); await loadPublic();
+      $("#oTitle").focus();
+    } catch (e) { console.error(e); $("#offerMsg").innerHTML = `<div class="msg err">${esc(e.message || "Erreur")}</div>`; }
+    btn.disabled = false; btn.textContent = this.editing ? "Enregistrer" : "Publier sur le mur";
+  },
+  async act(fn, okMsg) { try { await fn(); if (okMsg) toast(okMsg); await loadPublic(); } catch (e) { console.error(e); toast("Erreur : " + (e.message || e)); } }
+};
+
+/* Admin : événements */
+$("#loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  try { await api.signIn($("#loginEmail").value, $("#loginPass").value); $("#loginPass").value = ""; await Admin.enter(); }
+  catch (err) { $("#loginMsg").innerHTML = `<div class="msg err">${esc(err.message === "Invalid login credentials" ? "E-mail ou mot de passe incorrect." : err.message)}</div>`; }
+});
+$("#logoutBtn").addEventListener("click", async () => { await api.signOut(); if (Admin.unsub) { Admin.unsub(); Admin.unsub = null; } Admin.showLogin(); });
+$$("[data-atab]").forEach(b => b.addEventListener("click", () => {
+  $$("[data-atab]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  $$("[data-apane]").forEach(p => p.classList.toggle("hidden", p.dataset.apane !== b.dataset.atab));
+}));
+$("#offerForm").addEventListener("submit", e => { e.preventDefault(); Admin.submitOffer(); });
+$("#offerCancel").addEventListener("click", () => Admin.resetOfferForm());
+$("#offerFile").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  Admin.file = f; $("#offerPreview").src = URL.createObjectURL(f); $("#offerImageUrl").value = "";
+});
+$("#offerImageUrl").addEventListener("input", e => { Admin.file = null; $("#offerPreview").src = e.target.value || placeholder("Photo"); });
+["#oJpy", "#rate", "#markup"].forEach(s => $(s).addEventListener("input", () => {
+  store.set("jl_rate", +$("#rate").value); store.set("jl_markup", +$("#markup").value); Admin.calcEur();
+}));
+$("#adminSearch").addEventListener("input", () => Admin.renderOffers());
+
+$("#adminOffers").addEventListener("click", e => {
+  const ed = e.target.closest("[data-edit]"), del = e.target.closest("[data-del]");
+  if (ed) Admin.editOffer(ed.dataset.edit);
+  if (del && confirm("Supprimer cette offre et ses réservations ?")) Admin.act(() => api.deleteOffer(del.dataset.del), "Offre supprimée");
+});
+$("#adminOffers").addEventListener("change", e => {
+  const st = e.target.closest("[data-status]"), gr = e.target.closest("[data-group]");
+  if (st) Admin.act(() => api.patchOffer(st.dataset.status, { status: st.value }), "Statut mis à jour");
+  if (gr) Admin.act(() => api.patchOffer(gr.dataset.group, { group_order_id: gr.value || null }), "Commande mise à jour");
+});
+$("#adminClients").addEventListener("click", e => {
+  const c = e.target.closest("[data-confirm]"), d = e.target.closest("[data-delint]");
+  if (c) Admin.act(() => api.patchOffer(c.dataset.confirm, { status: "reserved" }), "Carte réservée");
+  if (d && confirm("Retirer cette demande ?")) Admin.act(async () => { await api.deleteInterest(d.dataset.delint); await Admin.loadInterests(); }, "Demande retirée");
+});
+$("#copyHandles").addEventListener("click", async () => {
+  const hs = [...new Set(Admin.interests.map(i => "@" + i.handle))].join(" ");
+  try { await navigator.clipboard.writeText(hs); toast("@ copiés"); } catch { prompt("Copie la liste :", hs); }
+});
+$("#groupForm").addEventListener("submit", e => {
+  e.preventDefault(); const n = $("#gName").value.trim(); if (!n) return;
+  Admin.act(async () => { await api.addOrder(n); $("#gName").value = ""; }, "Commande créée");
+});
+$("#adminGroups").addEventListener("click", e => {
+  const st = e.target.closest("[data-step]"), at = e.target.closest("[data-attach]"), dg = e.target.closest("[data-delgroup]");
+  if (st) {
+    const g = S.orders.find(x => x.id === st.dataset.step), i = +st.dataset.i;
+    const dates = { ...(g.step_dates || {}) };
+    for (let k = 0; k <= i; k++) if (!dates[k]) dates[k] = new Date().toISOString();
+    for (let k = i + 1; k < STEPS.length; k++) delete dates[k];
+    Admin.act(() => api.patchOrder(g.id, { step: i, step_dates: dates }), "Étape : " + STEPS[i]);
+  }
+  if (at) {
+    const ids = S.offers.filter(o => !o.group_order_id && ["reserved", "sold"].includes(o.status)).map(o => o.id);
+    if (!ids.length) return toast("Aucune carte réservée sans commande.");
+    Admin.act(() => api.patchOffers(ids, { group_order_id: at.dataset.attach }), `${ids.length} carte(s) ajoutée(s)`);
+  }
+  if (dg && confirm("Supprimer cette commande groupée ? Les cartes restent sur le mur.")) Admin.act(() => api.deleteOrder(dg.dataset.delgroup), "Commande supprimée");
+});
+$("#adminGroups").addEventListener("change", e => {
+  const t = e.target.closest("[data-track]"), n = e.target.closest("[data-note]");
+  if (t) Admin.act(() => api.patchOrder(t.dataset.track, { tracking: t.value.trim() || null }), "Suivi enregistré");
+  if (n) Admin.act(() => api.patchOrder(n.dataset.note, { note: n.value.trim() || null }), "Message enregistré");
+});
+$("#liveForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const l = { title: $("#lTitle").value.trim(), starts_at: new Date($("#lStart").value).toISOString(), duration_min: +$("#lDur").value || 90, url: $("#lUrl").value.trim() || null };
+  Admin.act(async () => { await api.addLive(l); $("#liveForm").reset(); $("#lDur").value = 90; }, "Live programmé");
+});
+$("#adminLives").addEventListener("click", e => {
+  const d = e.target.closest("[data-dellive]");
+  if (d && confirm("Supprimer ce live ?")) Admin.act(() => api.deleteLive(d.dataset.dellive), "Live supprimé");
+});
+
+/* =========================================================
+   Navigation et démarrage
+   ========================================================= */
+function route() {
+  const v = (location.hash || "#mur").slice(1);
+  const view = ["mur", "commandes", "suivi", "admin"].includes(v) ? v : "mur";
+  $$("section.view").forEach(s => s.classList.toggle("hidden", s.id !== "view-" + view));
+  $$("nav.tabs a").forEach(a => a.dataset.view === view ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+  $("#hero").classList.toggle("hidden", view === "admin");
+  if (view === "admin" && !Admin.on) Admin.enter();
+  if (view === "suivi" && !$("#trackHandle").value) $("#trackHandle").value = store.get("jl_handle", "");
+}
+$$("[data-filter]").forEach(b => b.addEventListener("click", () => {
+  S.filter = b.dataset.filter; $$("[data-filter]").forEach(x => x.setAttribute("aria-pressed", x === b)); renderWall();
+}));
+$("#search").addEventListener("input", e => { S.q = e.target.value; renderWall(); });
+$("#liveFilter").addEventListener("change", e => { S.live = e.target.value; renderWall(); });
+window.addEventListener("hashchange", route);
+
+document.title = `${SHOP_NAME} · Offres en live`;
+$("#shopName").textContent = SHOP_NAME;
+$("#igLink").href = `https://instagram.com/${INSTAGRAM_HANDLE}`;
+$("#igLink").textContent = "@" + INSTAGRAM_HANDLE;
+if (api.demo) $("#demoBanner").classList.remove("hidden");
+
+route();
+loadPublic();
+api.subscribe(["offers", "lives", "group_orders"], scheduleReload);
+setInterval(renderLivebox, 1000);
+setInterval(async () => { if (document.visibilityState === "visible") { try { S.counts = await api.counts(); renderWall(); } catch {} } }, 30000);
+</script>
+</body>
+</html>
