@@ -360,6 +360,11 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
         <form class="panel" id="groupForm">
           <h3 style="margin:0 0 12px">Nouvelle commande groupée</h3>
           <label class="lab">Nom<input class="field" id="gName" required placeholder="Commande #3 · lives de septembre"></label>
+          <div class="formgrid" style="margin-top:12px">
+            <label class="lab">Début des commandes<input class="field" type="date" id="gStart"></label>
+            <label class="lab">Fin des commandes<input class="field" type="date" id="gEnd"></label>
+          </div>
+          <p class="hint" style="margin-top:8px">Facultatif : tu peux les ajouter ou les modifier plus tard.</p>
           <button class="btn red" type="submit" style="margin-top:12px;width:100%">Créer</button>
         </form>
         <div class="rows" id="adminGroups"></div>
@@ -492,7 +497,7 @@ function makeSupabaseApi() {
     patchOffers: async (ids, patch) => ok(await sb.from("offers").update(patch).in("id", ids)),
     deleteOffer: async id => ok(await sb.from("offers").delete().eq("id", id)),
     deleteInterest: async id => ok(await sb.from("interests").delete().eq("id", id)),
-    addOrder: async name => ok(await sb.from("group_orders").insert({ name })),
+    addOrder: async row => ok(await sb.from("group_orders").insert(row)),
     patchOrder: async (id, patch) => ok(await sb.from("group_orders").update(patch).eq("id", id)),
     deleteOrder: async id => ok(await sb.from("group_orders").delete().eq("id", id)),
     addLive: async l => ok(await sb.from("lives").insert(l)),
@@ -521,7 +526,7 @@ function makeDemoApi() {
   ];
   const orders = [
     { id: "g1", name: "Commande #1 · lives d'août", step: 3, step_dates: { 0: new Date(now - 40 * D).toISOString(), 1: new Date(now - 35 * D).toISOString(), 2: new Date(now - 30 * D).toISOString(), 3: new Date(now - 21 * D).toISOString() }, tracking: "", created_at: new Date(now - 40 * D).toISOString() },
-    { id: "g2", name: "Commande #2 · live du " + fmtDay(now - 6 * D), step: 1, step_dates: { 0: new Date(now - 5 * D).toISOString(), 1: new Date(now - 2 * D).toISOString() }, tracking: "", created_at: new Date(now - 5 * D).toISOString() }
+    { id: "g2", name: "Commande #2 · live du " + fmtDay(now - 6 * D), step: 0, step_dates: {}, starts_on: new Date(now - 5 * D).toISOString().slice(0, 10), ends_on: new Date(now + 4 * D).toISOString().slice(0, 10), tracking: "", created_at: new Date(now - 5 * D).toISOString() }
   ];
   const mk = (id, title, card_set, card_number, condition, jpy, eurv, status, live_id, group_order_id, ago) =>
     ({ id, title, card_set, card_number, language: "JP", condition, price_eur: eurv, image_url: "", status, live_id, group_order_id, created_at: new Date(now - ago).toISOString() });
@@ -552,7 +557,7 @@ function makeDemoApi() {
     async track(h) {
       return interests.filter(i => i.handle === normHandle(h)).map(i => {
         const o = offers.find(x => x.id === i.offer_id) || {}; const g = orders.find(x => x.id === o.group_order_id);
-        return { offer_id: o.id, title: o.title, card_set: o.card_set, card_number: o.card_number, image_url: o.image_url, price_eur: o.price_eur, status: o.status, interested_at: i.created_at, group_order_id: g?.id || null, group_name: g?.name || null, step: g?.step ?? null, step_dates: g?.step_dates || null, tracking: g?.tracking || null };
+        return { offer_id: o.id, title: o.title, card_set: o.card_set, card_number: o.card_number, image_url: o.image_url, price_eur: o.price_eur, status: o.status, interested_at: i.created_at, group_order_id: g?.id || null, group_name: g?.name || null, starts_on: g?.starts_on || null, ends_on: g?.ends_on || null, step: g?.step ?? null, step_dates: g?.step_dates || null, tracking: g?.tracking || null };
       });
     },
     async session() { return null; },
@@ -622,6 +627,26 @@ function renderWall() {
   }).join("");
 }
 
+const dOnly = v => { const [y, m, d] = String(v).slice(0, 10).split("-").map(Number); return new Date(y, m - 1, d); };
+const today0 = () => { const t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); };
+function periodText(g) {
+  const a = g.starts_on && fmtDay(dOnly(g.starts_on)), b = g.ends_on && fmtDay(dOnly(g.ends_on));
+  if (a && b) return `Commandes du ${a} au ${b}`;
+  if (a) return `Commandes ouvertes depuis le ${a}`;
+  if (b) return `Commandes jusqu'au ${b}`;
+  return "";
+}
+function openChip(g) {
+  if (g.step !== 0) return "";
+  const t = today0();
+  if (g.starts_on && dOnly(g.starts_on) > t) return `<span class="badge b-expired">Ouverture le ${esc(fmtDay(dOnly(g.starts_on)))}</span>`;
+  if (!g.ends_on) return g.starts_on ? `<span class="badge b-available">Ouverte</span>` : "";
+  const days = Math.round((dOnly(g.ends_on) - t) / 864e5);
+  if (days < 0) return `<span class="badge b-sold">Commandes clôturées</span>`;
+  if (days === 0) return `<span class="badge b-reserved">Clôture aujourd'hui</span>`;
+  return `<span class="badge b-available">Clôture dans ${days} jour${days > 1 ? "s" : ""}</span>`;
+}
+const orderDates = g => ({ ...(g.step_dates || {}), ...(g.starts_on ? { 0: dOnly(g.starts_on) } : {}) });
 function stepper(step, dates) {
   return `<div class="steps">${STEPS.map((s, i) => {
     const cls = i < step || step === 3 ? "done" : i === step ? "cur" : "";
@@ -636,9 +661,9 @@ function renderOrders() {
   const card = g => {
     const items = byOrder[g.id] || [];
     return `<article class="order"><header><div><h3>${esc(g.name)}</h3>
-      <span class="muted small">${items.length} carte${items.length > 1 ? "s" : ""} · ouverte le ${esc(fmtDay(g.created_at))}</span></div>
-      <span class="badge ${g.step === 3 ? "b-available" : "b-reserved"}">${esc(STEPS[g.step])}</span></header>
-      ${stepper(g.step, g.step_dates)}
+      <span class="muted small">${items.length} carte${items.length > 1 ? "s" : ""}${periodText(g) ? " · " + esc(periodText(g)) : ""}</span></div>
+      <span style="display:flex;gap:6px;flex-wrap:wrap">${openChip(g)}<span class="badge ${g.step === 3 ? "b-available" : "b-reserved"}">${esc(STEPS[g.step])}</span></span></header>
+      ${stepper(g.step, orderDates(g))}
       ${g.tracking ? `<p class="small">Suivi colis : <strong>${esc(g.tracking)}</strong></p>` : ""}
       ${g.note ? `<p class="small muted">${esc(g.note)}</p>` : ""}
       <div class="thumbs">${items.slice(0, 12).map(o => `<img src="${esc(img(o))}" alt="${esc(o.title)}" title="${esc(o.title)}" loading="lazy">`).join("")}${items.length > 12 ? `<span class="more">+${items.length - 12}</span>` : ""}</div>
@@ -742,7 +767,7 @@ $("#trackForm").addEventListener("submit", async e => {
         <div><h3>${esc(r.title)}</h3>
           <div class="muted small">${[r.card_set, r.card_number].filter(Boolean).map(esc).join(" · ")} ${r.price_eur != null ? "· " + esc(eur(r.price_eur)) : ""}</div>
           <div style="margin-top:6px">${r.group_order_id
-            ? `<span class="small">📦 ${esc(r.group_name)}</span>${r.tracking ? `<span class="small muted"> · suivi ${esc(r.tracking)}</span>` : ""}${stepper(r.step, r.step_dates)}`
+            ? `<span class="small">📦 ${esc(r.group_name)}</span>${periodText(r) ? `<span class="small muted"> · ${esc(periodText(r))}</span>` : ""}${r.tracking ? `<span class="small muted"> · suivi ${esc(r.tracking)}</span>` : ""}${stepper(r.step, orderDates(r))}`
             : r.status === "expired"
               ? `<span class="badge b-expired">Plus disponible</span>`
               : `<span class="badge b-${esc(r.status)}">${r.status === "available" ? "Demande reçue" : esc(STATUS_LABEL[r.status])}</span> <span class="small muted">en attente d'une commande groupée</span>`}</div>
@@ -816,9 +841,11 @@ const Admin = {
   renderGroups() {
     $("#adminGroups").innerHTML = S.orders.length ? S.orders.map(g => {
       const n = S.offers.filter(o => o.group_order_id === g.id).length;
-      return `<div class="client"><header><strong>${esc(g.name)}</strong><span class="small muted">${n} carte${n > 1 ? "s" : ""}</span></header>
+      return `<div class="client"><header><strong>${esc(g.name)}</strong><span class="small muted">${n} carte${n > 1 ? "s" : ""} ${openChip(g)}</span></header>
         <div class="stepbtns">${STEPS.map((s, i) => `<button class="chip" data-step="${esc(g.id)}" data-i="${i}" aria-pressed="${i === g.step}">${i + 1}. ${s}</button>`).join("")}</div>
         <div class="formgrid" style="margin-top:10px">
+          <label class="lab">Début des commandes<input class="field" type="date" data-start="${esc(g.id)}" value="${esc(g.starts_on || "")}"></label>
+          <label class="lab">Fin des commandes<input class="field" type="date" data-end="${esc(g.id)}" value="${esc(g.ends_on || "")}"></label>
           <label class="lab">N° de suivi<input class="field" data-track="${esc(g.id)}" value="${esc(g.tracking || "")}"></label>
           <label class="lab">Message public<input class="field" data-note="${esc(g.id)}" value="${esc(g.note || "")}"></label>
         </div>
@@ -923,7 +950,9 @@ $("#copyHandles").addEventListener("click", async () => {
 });
 $("#groupForm").addEventListener("submit", e => {
   e.preventDefault(); const n = $("#gName").value.trim(); if (!n) return;
-  Admin.act(async () => { await api.addOrder(n); $("#gName").value = ""; }, "Commande créée");
+  const starts_on = $("#gStart").value || null, ends_on = $("#gEnd").value || null;
+  if (starts_on && ends_on && ends_on < starts_on) return toast("La date de fin doit être après la date de début.");
+  Admin.act(async () => { await api.addOrder({ name: n, starts_on, ends_on }); $("#groupForm").reset(); }, "Commande créée");
 });
 $("#adminGroups").addEventListener("click", e => {
   const st = e.target.closest("[data-step]"), at = e.target.closest("[data-attach]"), dg = e.target.closest("[data-delgroup]");
@@ -945,7 +974,15 @@ $("#adminGroups").addEventListener("change", e => {
   const t = e.target.closest("[data-track]"), n = e.target.closest("[data-note]");
   if (t) Admin.act(() => api.patchOrder(t.dataset.track, { tracking: t.value.trim() || null }), "Suivi enregistré");
   if (n) Admin.act(() => api.patchOrder(n.dataset.note, { note: n.value.trim() || null }), "Message enregistré");
+  const ds = e.target.closest("[data-start]"), de = e.target.closest("[data-end]");
+  if (ds || de) {
+    const id = (ds || de).dataset.start || (ds || de).dataset.end, g = S.orders.find(x => x.id === id);
+    const starts_on = ds ? ds.value || null : g.starts_on, ends_on = de ? de.value || null : g.ends_on;
+    if (starts_on && ends_on && ends_on < starts_on) { toast("La date de fin doit être après la date de début."); renderAdminSafe(); return; }
+    Admin.act(() => api.patchOrder(id, ds ? { starts_on } : { ends_on }), ds ? "Date de début enregistrée" : "Date de fin enregistrée");
+  }
 });
+function renderAdminSafe() { Admin.renderGroups(); }
 $("#liveForm").addEventListener("submit", e => {
   e.preventDefault();
   const l = { title: $("#lTitle").value.trim(), starts_at: new Date($("#lStart").value).toISOString(), duration_min: +$("#lDur").value || 90, url: $("#lUrl").value.trim() || null };
