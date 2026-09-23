@@ -207,6 +207,8 @@ label.lab .field{font-weight:400}
 .client ul{margin:8px 0 0;padding-left:18px;font-size:13px}
 .stepbtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .stepbtns .chip{font-size:12px}
+.ordbtns{display:inline-flex;gap:2px}.ordbtns .btn{min-height:28px;padding:2px 8px}
+.field.dirty{border-color:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
 .hint{font-size:12px;color:var(--muted);margin:0}
 footer.site{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--muted);font-size:13px}
 footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -365,6 +367,7 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
             <label class="lab">Fin des commandes<input class="field" type="date" id="gEnd"></label>
           </div>
           <p class="hint" style="margin-top:8px">Facultatif : tu peux les ajouter ou les modifier plus tard.</p>
+          <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="gSoon"> Afficher en « Prochainement »</label>
           <button class="btn red" type="submit" style="margin-top:12px;width:100%">Créer</button>
         </form>
         <div class="rows" id="adminGroups"></div>
@@ -429,6 +432,7 @@ const INSTAGRAM_HANDLE  = "porygonvault";   // sans le @
 
 const CONFIGURED = !SUPABASE_URL.includes("VOTRE") && !SUPABASE_ANON_KEY.includes("VOTRE");
 const STEPS = ["Commande", "Préparation", "Livraison", "Livrée"];
+const stepLabel = step => step < 0 ? "Prochainement" : STEPS[step];
 const STATUS_LABEL = { available: "Disponible", reserved: "Réservée", sold: "Vendue", expired: "Plus dispo" };
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -469,7 +473,7 @@ function makeSupabaseApi() {
     offers: async () => ok(await sb.from("offers").select(OFFER_COLS).order("created_at", { ascending: false }).limit(1000)),
     counts: async () => Object.fromEntries(ok(await sb.rpc("interest_counts")).map(r => [r.offer_id, r.n])),
     lives: async () => ok(await sb.from("lives").select("*").order("starts_at")),
-    orders: async () => ok(await sb.from("group_orders").select("*").order("created_at", { ascending: false })),
+    orders: async () => ok(await sb.from("group_orders").select("*").order("position").order("created_at", { ascending: false })),
     async addInterest(offer_id, handle, note) {
       const { error } = await sb.from("interests").insert({ offer_id, handle, note: note || null });
       if (error && error.code === "23505") return "dup";
@@ -525,8 +529,9 @@ function makeDemoApi() {
     { id: "l3", title: "Vos demandes : cartes promo", starts_at: new Date(now + 9 * D).toISOString(), duration_min: 60, url: "" }
   ];
   const orders = [
-    { id: "g1", name: "Commande #1 · lives d'août", step: 3, step_dates: { 0: new Date(now - 40 * D).toISOString(), 1: new Date(now - 35 * D).toISOString(), 2: new Date(now - 30 * D).toISOString(), 3: new Date(now - 21 * D).toISOString() }, tracking: "", created_at: new Date(now - 40 * D).toISOString() },
-    { id: "g2", name: "Commande #2 · live du " + fmtDay(now - 6 * D), step: 0, step_dates: {}, starts_on: new Date(now - 5 * D).toISOString().slice(0, 10), ends_on: new Date(now + 4 * D).toISOString().slice(0, 10), tracking: "", created_at: new Date(now - 5 * D).toISOString() }
+    { id: "g3", name: "Commande #3 · lives d'octobre", step: -1, position: 0, step_dates: {}, starts_on: new Date(now + 10 * D).toISOString().slice(0, 10), ends_on: null, tracking: "", created_at: new Date(now).toISOString() },
+    { id: "g1", name: "Commande #1 · lives d'août", step: 3, position: 2, step_dates: { 0: new Date(now - 40 * D).toISOString(), 1: new Date(now - 35 * D).toISOString(), 2: new Date(now - 30 * D).toISOString(), 3: new Date(now - 21 * D).toISOString() }, tracking: "", created_at: new Date(now - 40 * D).toISOString() },
+    { id: "g2", name: "Commande #2 · live du " + fmtDay(now - 6 * D), step: 0, position: 1, step_dates: {}, starts_on: new Date(now - 5 * D).toISOString().slice(0, 10), ends_on: new Date(now + 4 * D).toISOString().slice(0, 10), tracking: "", created_at: new Date(now - 5 * D).toISOString() }
   ];
   const mk = (id, title, card_set, card_number, condition, jpy, eurv, status, live_id, group_order_id, ago) =>
     ({ id, title, card_set, card_number, language: "JP", condition, price_eur: eurv, image_url: "", status, live_id, group_order_id, created_at: new Date(now - ago).toISOString() });
@@ -548,7 +553,7 @@ function makeDemoApi() {
     offers: async () => offers.slice().sort((a, b) => b.created_at.localeCompare(a.created_at)),
     counts: async () => interests.reduce((m, i) => (m[i.offer_id] = (m[i.offer_id] || 0) + 1, m), {}),
     lives: async () => lives.slice().sort((a, b) => a.starts_at.localeCompare(b.starts_at)),
-    orders: async () => orders.slice(),
+    orders: async () => orders.slice().sort((a, b) => (a.position || 0) - (b.position || 0)),
     async addInterest(offer_id, handle, note) {
       if (interests.some(i => i.offer_id === offer_id && i.handle === handle)) return "dup";
       interests.push({ id: "i" + Math.random(), offer_id, handle, note, created_at: new Date().toISOString() });
@@ -632,11 +637,12 @@ const today0 = () => { const t = new Date(); return new Date(t.getFullYear(), t.
 function periodText(g) {
   const a = g.starts_on && fmtDay(dOnly(g.starts_on)), b = g.ends_on && fmtDay(dOnly(g.ends_on));
   if (a && b) return `Commandes du ${a} au ${b}`;
-  if (a) return `Commandes ouvertes depuis le ${a}`;
+  if (a) return dOnly(g.starts_on) > today0() ? `Ouverture le ${a}` : `Commandes ouvertes depuis le ${a}`;
   if (b) return `Commandes jusqu'au ${b}`;
   return "";
 }
 function openChip(g) {
+  if (g.step < 0) return "";
   if (g.step !== 0) return "";
   const t = today0();
   if (g.starts_on && dOnly(g.starts_on) > t) return `<span class="badge b-expired">Ouverture le ${esc(fmtDay(dOnly(g.starts_on)))}</span>`;
@@ -662,7 +668,7 @@ function renderOrders() {
     const items = byOrder[g.id] || [];
     return `<article class="order"><header><div><h3>${esc(g.name)}</h3>
       <span class="muted small">${items.length} carte${items.length > 1 ? "s" : ""}${periodText(g) ? " · " + esc(periodText(g)) : ""}</span></div>
-      <span style="display:flex;gap:6px;flex-wrap:wrap">${openChip(g)}<span class="badge ${g.step === 3 ? "b-available" : "b-reserved"}">${esc(STEPS[g.step])}</span></span></header>
+      <span style="display:flex;gap:6px;flex-wrap:wrap">${openChip(g)}<span class="badge ${g.step === 3 ? "b-available" : g.step < 0 ? "b-expired" : "b-reserved"}">${esc(stepLabel(g.step))}</span></span></header>
       ${stepper(g.step, orderDates(g))}
       ${g.tracking ? `<p class="small">Suivi colis : <strong>${esc(g.tracking)}</strong></p>` : ""}
       ${g.note ? `<p class="small muted">${esc(g.note)}</p>` : ""}
@@ -767,7 +773,7 @@ $("#trackForm").addEventListener("submit", async e => {
         <div><h3>${esc(r.title)}</h3>
           <div class="muted small">${[r.card_set, r.card_number].filter(Boolean).map(esc).join(" · ")} ${r.price_eur != null ? "· " + esc(eur(r.price_eur)) : ""}</div>
           <div style="margin-top:6px">${r.group_order_id
-            ? `<span class="small">📦 ${esc(r.group_name)}</span>${periodText(r) ? `<span class="small muted"> · ${esc(periodText(r))}</span>` : ""}${r.tracking ? `<span class="small muted"> · suivi ${esc(r.tracking)}</span>` : ""}${stepper(r.step, orderDates(r))}`
+            ? `<span class="small">📦 ${esc(r.group_name)}</span>${r.step < 0 ? `<span class="small muted"> · Prochainement</span>` : ""}${periodText(r) ? `<span class="small muted"> · ${esc(periodText(r))}</span>` : ""}${r.tracking ? `<span class="small muted"> · suivi ${esc(r.tracking)}</span>` : ""}${stepper(r.step, orderDates(r))}`
             : r.status === "expired"
               ? `<span class="badge b-expired">Plus disponible</span>`
               : `<span class="badge b-${esc(r.status)}">${r.status === "available" ? "Demande reçue" : esc(STATUS_LABEL[r.status])}</span> <span class="small muted">en attente d'une commande groupée</span>`}</div>
@@ -798,7 +804,7 @@ const Admin = {
     $("#loginMsg").innerHTML = err ? `<div class="msg err">${esc(err)}</div>` : "";
   },
   async loadInterests() { try { [this.interests, this.priv] = await Promise.all([api.interests(), api.privates()]); } catch (e) { console.error(e); } this.render(); },
-  render() { if (!this.on) return; this.renderOffers(); this.renderClients(); this.renderGroups(); this.renderLives(); this.renderLiveSelect(); },
+  render() { if (!this.on) return; if (editingField()) { this.pendingRender = true; return; } this.pendingRender = false; this.renderOffers(); this.renderClients(); this.renderGroups(); this.renderLives(); this.renderLiveSelect(); },
   handlesFor(id) { return this.interests.filter(i => i.offer_id === id); },
   renderLiveSelect() {
     const sel = $("#oLive"), cur = sel.value;
@@ -816,8 +822,8 @@ const Admin = {
       return `<div class="row"><img src="${esc(img(o))}" alt="">
         <div><h4>${esc(o.title)}</h4><div class="muted small">${[o.card_set, o.card_number].filter(Boolean).map(esc).join(" · ")} · ${esc(eur(o.price_eur))} · ${esc(yen(this.priv[o.id]?.price_jpy))}</div>
           <div class="ctrl">
-            <select class="field" data-status="${esc(o.id)}" aria-label="Statut">${Object.entries(STATUS_LABEL).map(([k, v]) => `<option value="${k}" ${k === o.status ? "selected" : ""}>${v}</option>`).join("")}</select>
-            <select class="field" data-group="${esc(o.id)}" aria-label="Commande groupée">${opts(o.group_order_id)}</select>
+            <select class="field" data-save data-orig="${esc(o.status)}" data-status="${esc(o.id)}" aria-label="Statut">${Object.entries(STATUS_LABEL).map(([k, v]) => `<option value="${k}" ${k === o.status ? "selected" : ""}>${v}</option>`).join("")}</select>
+            <select class="field" data-save data-orig="${esc(o.group_order_id || "")}" data-group="${esc(o.id)}" aria-label="Commande groupée">${opts(o.group_order_id)}</select>
           </div>
           ${hs.length ? `<div class="handles">${hs.map(i => `<a href="https://ig.me/m/${esc(i.handle)}" target="_blank" rel="noopener" title="${esc(i.note || "")}">@${esc(i.handle)}${i.note ? " 💬" : ""}</a>`).join("")}</div>` : ""}
         </div>
@@ -839,15 +845,17 @@ const Admin = {
     }).join("") : `<div class="empty">Aucune réservation pour l'instant.</div>`;
   },
   renderGroups() {
-    $("#adminGroups").innerHTML = S.orders.length ? S.orders.map(g => {
+    $("#adminGroups").innerHTML = S.orders.length ? S.orders.map((g, idx, arr) => {
       const n = S.offers.filter(o => o.group_order_id === g.id).length;
-      return `<div class="client"><header><strong>${esc(g.name)}</strong><span class="small muted">${n} carte${n > 1 ? "s" : ""} ${openChip(g)}</span></header>
-        <div class="stepbtns">${STEPS.map((s, i) => `<button class="chip" data-step="${esc(g.id)}" data-i="${i}" aria-pressed="${i === g.step}">${i + 1}. ${s}</button>`).join("")}</div>
+      return `<div class="client"><header><span style="display:flex;align-items:center;gap:6px">
+          <span class="ordbtns"><button class="btn ghost sm" data-move="${esc(g.id)}" data-dir="-1" aria-label="Monter" ${idx === 0 ? "disabled" : ""}>↑</button><button class="btn ghost sm" data-move="${esc(g.id)}" data-dir="1" aria-label="Descendre" ${idx === arr.length - 1 ? "disabled" : ""}>↓</button></span>
+          <strong>${esc(g.name)}</strong></span><span class="small muted">${n} carte${n > 1 ? "s" : ""} ${openChip(g)}</span></header>
+        <div class="stepbtns"><button class="chip" data-step="${esc(g.id)}" data-i="-1" aria-pressed="${g.step < 0}">Prochainement</button>${STEPS.map((s, i) => `<button class="chip" data-step="${esc(g.id)}" data-i="${i}" aria-pressed="${i === g.step}">${i + 1}. ${s}</button>`).join("")}</div>
         <div class="formgrid" style="margin-top:10px">
-          <label class="lab">Début des commandes<input class="field" type="date" data-start="${esc(g.id)}" value="${esc(g.starts_on || "")}"></label>
-          <label class="lab">Fin des commandes<input class="field" type="date" data-end="${esc(g.id)}" value="${esc(g.ends_on || "")}"></label>
-          <label class="lab">N° de suivi<input class="field" data-track="${esc(g.id)}" value="${esc(g.tracking || "")}"></label>
-          <label class="lab">Message public<input class="field" data-note="${esc(g.id)}" value="${esc(g.note || "")}"></label>
+          <label class="lab">Début des commandes<input class="field" type="date" data-start="${esc(g.id)}" value="${esc(g.starts_on || "")}" data-save data-orig="${esc(g.starts_on || "")}"></label>
+          <label class="lab">Fin des commandes<input class="field" type="date" data-end="${esc(g.id)}" value="${esc(g.ends_on || "")}" data-save data-orig="${esc(g.ends_on || "")}"></label>
+          <label class="lab">N° de suivi<input class="field" data-track="${esc(g.id)}" value="${esc(g.tracking || "")}" data-save data-orig="${esc(g.tracking || "")}"></label>
+          <label class="lab">Message public<input class="field" data-note="${esc(g.id)}" value="${esc(g.note || "")}" data-save data-orig="${esc(g.note || "")}"></label>
         </div>
         <div class="stepbtns"><button class="btn ghost sm" data-attach="${esc(g.id)}">+ Ajouter toutes les réservées sans commande</button>
           <button class="btn ghost sm" data-delgroup="${esc(g.id)}">Supprimer</button></div></div>`;
@@ -934,11 +942,6 @@ $("#adminOffers").addEventListener("click", e => {
   if (ed) Admin.editOffer(ed.dataset.edit);
   if (del && confirm("Supprimer cette offre et ses réservations ?")) Admin.act(() => api.deleteOffer(del.dataset.del), "Offre supprimée");
 });
-$("#adminOffers").addEventListener("change", e => {
-  const st = e.target.closest("[data-status]"), gr = e.target.closest("[data-group]");
-  if (st) Admin.act(() => api.patchOffer(st.dataset.status, { status: st.value }), "Statut mis à jour");
-  if (gr) Admin.act(() => api.patchOffer(gr.dataset.group, { group_order_id: gr.value || null }), "Commande mise à jour");
-});
 $("#adminClients").addEventListener("click", e => {
   const c = e.target.closest("[data-confirm]"), d = e.target.closest("[data-delint]");
   if (c) Admin.act(() => api.patchOffer(c.dataset.confirm, { status: "reserved" }), "Carte réservée");
@@ -952,16 +955,26 @@ $("#groupForm").addEventListener("submit", e => {
   e.preventDefault(); const n = $("#gName").value.trim(); if (!n) return;
   const starts_on = $("#gStart").value || null, ends_on = $("#gEnd").value || null;
   if (starts_on && ends_on && ends_on < starts_on) return toast("La date de fin doit être après la date de début.");
-  Admin.act(async () => { await api.addOrder({ name: n, starts_on, ends_on }); $("#groupForm").reset(); }, "Commande créée");
+  Admin.act(async () => { await api.addOrder({ name: n, starts_on, ends_on, step: $("#gSoon").checked ? -1 : 0, position: Math.min(0, ...S.orders.map(g => g.position || 0)) - 1 }); $("#groupForm").reset(); }, "Commande créée");
 });
 $("#adminGroups").addEventListener("click", e => {
   const st = e.target.closest("[data-step]"), at = e.target.closest("[data-attach]"), dg = e.target.closest("[data-delgroup]");
   if (st) {
     const g = S.orders.find(x => x.id === st.dataset.step), i = +st.dataset.i;
+    if (i === g.step) return;
     const dates = { ...(g.step_dates || {}) };
     for (let k = 0; k <= i; k++) if (!dates[k]) dates[k] = new Date().toISOString();
     for (let k = i + 1; k < STEPS.length; k++) delete dates[k];
-    Admin.act(() => api.patchOrder(g.id, { step: i, step_dates: dates }), "Étape : " + STEPS[i]);
+    Admin.act(() => api.patchOrder(g.id, { step: i, step_dates: dates }), "Étape : " + stepLabel(i));
+  }
+  const mv = e.target.closest("[data-move]");
+  if (mv) {
+    const list = S.orders.slice(), from = list.findIndex(x => x.id === mv.dataset.move), to = from + +mv.dataset.dir;
+    if (to < 0 || to >= list.length) return;
+    [list[from], list[to]] = [list[to], list[from]];
+    const changed = list.map((g, k) => ({ g, k })).filter(({ g, k }) => g.position !== k);
+    S.orders = list.map((g, k) => ({ ...g, position: k })); Admin.renderGroups(); renderOrders();
+    Admin.act(() => Promise.all(changed.map(({ g, k }) => api.patchOrder(g.id, { position: k }))));
   }
   if (at) {
     const ids = S.offers.filter(o => !o.group_order_id && ["reserved", "sold"].includes(o.status)).map(o => o.id);
@@ -970,19 +983,36 @@ $("#adminGroups").addEventListener("click", e => {
   }
   if (dg && confirm("Supprimer cette commande groupée ? Les cartes restent sur le mur.")) Admin.act(() => api.deleteOrder(dg.dataset.delgroup), "Commande supprimée");
 });
-$("#adminGroups").addEventListener("change", e => {
-  const t = e.target.closest("[data-track]"), n = e.target.closest("[data-note]");
-  if (t) Admin.act(() => api.patchOrder(t.dataset.track, { tracking: t.value.trim() || null }), "Suivi enregistré");
-  if (n) Admin.act(() => api.patchOrder(n.dataset.note, { note: n.value.trim() || null }), "Message enregistré");
-  const ds = e.target.closest("[data-start]"), de = e.target.closest("[data-end]");
-  if (ds || de) {
-    const id = (ds || de).dataset.start || (ds || de).dataset.end, g = S.orders.find(x => x.id === id);
-    const starts_on = ds ? ds.value || null : g.starts_on, ends_on = de ? de.value || null : g.ends_on;
-    if (starts_on && ends_on && ends_on < starts_on) { toast("La date de fin doit être après la date de début."); renderAdminSafe(); return; }
-    Admin.act(() => api.patchOrder(id, ds ? { starts_on } : { ends_on }), ds ? "Date de début enregistrée" : "Date de fin enregistrée");
-  }
+/* Champs modifiables en ligne : enregistrés seulement sur Entrée ou en quittant le champ */
+const editingField = () => { const a = document.activeElement; return a && a.matches && a.matches("#adminBox [data-save]") ? a : null; };
+function commitField(el) {
+  const v = el.value, id = el.dataset.status || el.dataset.group || el.dataset.track || el.dataset.note || el.dataset.start || el.dataset.end;
+  if (v === el.dataset.orig) { el.classList.remove("dirty"); return null; }
+  if ("status" in el.dataset) return () => api.patchOffer(id, { status: v });
+  if ("group" in el.dataset) return () => api.patchOffer(id, { group_order_id: v || null });
+  if ("track" in el.dataset) return () => api.patchOrder(id, { tracking: v.trim() || null });
+  if ("note" in el.dataset) return () => api.patchOrder(id, { note: v.trim() || null });
+  const g = S.orders.find(x => x.id === id);
+  const starts_on = "start" in el.dataset ? v || null : g.starts_on, ends_on = "end" in el.dataset ? v || null : g.ends_on;
+  if (starts_on && ends_on && ends_on < starts_on) { toast("La date de fin doit être après la date de début."); el.value = el.dataset.orig; el.classList.remove("dirty"); return null; }
+  return () => api.patchOrder(id, "start" in el.dataset ? { starts_on } : { ends_on });
+}
+const adminBox = $("#adminBox");
+adminBox.addEventListener("input", e => { const el = e.target.closest("[data-save]"); if (el) el.classList.toggle("dirty", el.value !== el.dataset.orig); });
+adminBox.addEventListener("change", e => { const el = e.target.closest("[data-save]"); if (el) el.classList.toggle("dirty", el.value !== el.dataset.orig); });
+adminBox.addEventListener("keydown", e => {
+  const el = e.target.closest("[data-save]");
+  if (el && e.key === "Enter") { e.preventDefault(); el.blur(); }
+  if (el && e.key === "Escape") { el.value = el.dataset.orig; el.classList.remove("dirty"); el.blur(); }
 });
-function renderAdminSafe() { Admin.renderGroups(); }
+adminBox.addEventListener("focusout", e => {
+  const el = e.target.closest("[data-save]"); if (!el) return;
+  const fn = commitField(el);
+  setTimeout(() => {
+    if (fn) { el.dataset.orig = el.value; el.classList.remove("dirty"); Admin.act(fn, "Enregistré ✓"); }
+    else if (Admin.pendingRender && !editingField()) Admin.render();
+  }, 0);
+});
 $("#liveForm").addEventListener("submit", e => {
   e.preventDefault();
   const l = { title: $("#lTitle").value.trim(), starts_at: new Date($("#lStart").value).toISOString(), duration_min: +$("#lDur").value || 90, url: $("#lUrl").value.trim() || null };
