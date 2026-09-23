@@ -121,6 +121,7 @@ section.view{padding:24px 0 60px}
 .b-sold{background:var(--red-soft);color:var(--red)}
 .b-expired{background:var(--off-soft);color:var(--off)}
 .offer .ph .badge{position:absolute;left:8px;top:8px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.offer .ph .psa{top:auto;bottom:8px;background:var(--gold);color:#fff;font-size:12px}
 .offer .ph .new{left:auto;right:8px;background:var(--red);color:#fff}
 .offer .body{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1}
 .offer h3{margin:0;font-size:15px;line-height:1.25;font-weight:700}
@@ -322,10 +323,10 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
             <label class="lab">Langue<input class="field" id="oLang" value="JP"></label>
             <label class="lab">État
               <select class="field" id="oCond">
-                <option value="">—</option><option>Mint</option><option>Near Mint</option><option>Excellent</option><option>Good</option><option>Played</option><option>Gradée (voir note)</option>
+                <option value="">—</option><optgroup label="Brut"><option>Mint</option><option>Near Mint</option><option>Excellent</option><option>Good</option><option>Played</option></optgroup><optgroup label="Gradée PSA"><option>PSA 10</option><option>PSA 9</option><option>PSA 8</option><option>PSA 7</option><option>PSA 6</option><option>PSA 5</option><option>PSA 4</option><option>PSA 3</option><option>PSA 2</option><option>PSA 1</option></optgroup>
               </select>
             </label>
-            <label class="lab">Prix Japon (¥)<input class="field" id="oJpy" type="number" min="0" inputmode="numeric"></label>
+            <label class="lab">🔒 Prix Japon (¥)<input class="field" id="oJpy" type="number" min="0" inputmode="numeric"></label>
             <label class="lab">Prix client (€)<input class="field" id="oEur" type="number" min="0" step="0.01" inputmode="decimal"></label>
             <p class="hint full">Calcul auto du prix client : ¥ × <input id="rate" type="number" step="0.0001" style="width:96px;min-height:34px;padding:4px 8px" class="field" aria-label="Taux JPY vers EUR"> × (1 + <input id="markup" type="number" step="1" style="width:64px;min-height:34px;padding:4px 8px" class="field" aria-label="Marge en pourcent"> %)</p>
             <label class="lab full">Live<select class="field" id="oLive"></select></label>
@@ -456,7 +457,7 @@ const img = o => o.image_url || placeholder(o.title);
    ========================================================= */
 function makeSupabaseApi() {
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const OFFER_COLS = "id,title,card_set,card_number,language,condition,price_jpy,price_eur,image_url,status,live_id,group_order_id,created_at";
+  const OFFER_COLS = "id,title,card_set,card_number,language,condition,price_eur,image_url,status,live_id,group_order_id,created_at";
   const ok = ({ data, error }) => { if (error) throw error; return data; };
   return {
     demo: false,
@@ -478,6 +479,7 @@ function makeSupabaseApi() {
     isAdmin: async () => ok(await sb.rpc("is_admin")) === true,
     // admin
     interests: async () => ok(await sb.from("interests").select("*").order("created_at", { ascending: false }).limit(5000)),
+    privates: async () => Object.fromEntries(ok(await sb.from("offer_private").select("offer_id,price_jpy")).map(r => [r.offer_id, r])),
     async getPrivate(id) { return ok(await sb.from("offer_private").select("*").eq("offer_id", id).maybeSingle()) || {}; },
     async saveOffer(id, pub, priv) {
       let row;
@@ -522,12 +524,12 @@ function makeDemoApi() {
     { id: "g2", name: "Commande #2 · live du " + fmtDay(now - 6 * D), step: 1, step_dates: { 0: new Date(now - 5 * D).toISOString(), 1: new Date(now - 2 * D).toISOString() }, tracking: "", created_at: new Date(now - 5 * D).toISOString() }
   ];
   const mk = (id, title, card_set, card_number, condition, jpy, eurv, status, live_id, group_order_id, ago) =>
-    ({ id, title, card_set, card_number, language: "JP", condition, price_jpy: jpy, price_eur: eurv, image_url: "", status, live_id, group_order_id, created_at: new Date(now - ago).toISOString() });
+    ({ id, title, card_set, card_number, language: "JP", condition, price_eur: eurv, image_url: "", status, live_id, group_order_id, created_at: new Date(now - ago).toISOString() });
   const offers = [
     mk("o1", "Pikachu ex SAR", "SV8a", "232/187", "Near Mint", 14800, 112, "available", "l1", null, 2 * H),
     mk("o2", "Évoli ex SAR", "SV8a", "224/187", "Mint", 9800, 74, "available", "l1", null, 3 * H),
-    mk("o3", "Dracaufeu ex SAR", "SV2a", "201/165", "Near Mint", 18500, 139, "reserved", "l1", "g2", 6 * D),
-    mk("o4", "Mew ex UR", "SV2a", "208/165", "Excellent", 4200, 32, "available", "l1", null, 6 * D),
+    mk("o3", "Dracaufeu ex SAR", "SV2a", "201/165", "PSA 10", 18500, 139, "reserved", "l1", "g2", 6 * D),
+    mk("o4", "Mew ex UR", "SV2a", "208/165", "PSA 9", 4200, 32, "available", "l1", null, 6 * D),
     mk("o5", "Lillie's Clefairy ex SAR", "SV9", "130/100", "Near Mint", 12800, 96, "sold", "l1", "g2", 6 * D),
     mk("o6", "Mimiqui AR", "SV8a", "198/187", "Mint", 1800, 14.5, "available", "l1", null, 6 * D)
   ];
@@ -608,11 +610,12 @@ function renderWall() {
     return `<article class="offer ${avail ? "" : "dim"}">
       <div class="ph"><img loading="lazy" src="${esc(img(o))}" alt="${esc(o.title)}">
         <span class="badge b-${esc(o.status)}">${esc(STATUS_LABEL[o.status] || o.status)}</span>
-        ${avail && new Date(o.created_at) > fresh ? `<span class="badge new">Nouveau</span>` : ""}</div>
+        ${avail && new Date(o.created_at) > fresh ? `<span class="badge new">Nouveau</span>` : ""}
+        ${/^PSA \d+$/.test(o.condition || "") ? `<span class="badge psa">${esc(o.condition)}</span>` : ""}</div>
       <div class="body">
         <h3>${esc(o.title)}</h3>
         <div class="meta">${[o.card_set, o.card_number, o.language, o.condition].filter(Boolean).map(esc).join(" · ")}</div>
-        <div class="price"><strong>${esc(eur(o.price_eur)) || "Prix en DM"}</strong><span>${esc(yen(o.price_jpy))}</span></div>
+        <div class="price"><strong>${esc(eur(o.price_eur)) || "Prix en DM"}</strong></div>
         <div class="interest">${n ? `${n} personne${n > 1 ? "s" : ""} intéressée${n > 1 ? "s" : ""}` : "&nbsp;"}</div>
         ${avail ? `<button class="btn red" data-reserve="${esc(o.id)}">Je la veux</button>` : ""}
       </div></article>`;
@@ -694,7 +697,7 @@ function openReserve(id) {
   reserveId = id;
   $("#reserveHead").innerHTML = `<img src="${esc(img(o))}" alt=""><div><h3>${esc(o.title)}</h3>
     <div class="muted small">${[o.card_set, o.card_number, o.condition].filter(Boolean).map(esc).join(" · ")}</div>
-    <div style="margin-top:6px"><strong style="font-size:18px">${esc(eur(o.price_eur))}</strong> <span class="muted small">${esc(yen(o.price_jpy))}</span></div></div>`;
+    <div style="margin-top:6px"><strong style="font-size:18px">${esc(eur(o.price_eur)) || "Prix en DM"}</strong></div></div>`;
   $("#rHandle").value = store.get("jl_handle", "");
   $("#rNote").value = ""; $("#reserveMsg").innerHTML = "";
   $("#reserveSubmit").disabled = false; $("#reserveSubmit").classList.remove("hidden");
@@ -751,7 +754,7 @@ $("#trackForm").addEventListener("submit", async e => {
    Espace admin
    ========================================================= */
 const Admin = {
-  on: false, interests: [], editing: null, unsub: null, file: null,
+  on: false, interests: [], priv: {}, editing: null, unsub: null, file: null,
   async enter() {
     if (api.demo) { $("#loginMsg").innerHTML = `<div class="msg err">L'espace admin fonctionne une fois Supabase configuré (voir le guide).</div>`; return; }
     const s = await api.session();
@@ -769,7 +772,7 @@ const Admin = {
     $("#loginBox").classList.remove("hidden"); $("#adminBox").classList.add("hidden"); $("#logoutBtn").classList.add("hidden");
     $("#loginMsg").innerHTML = err ? `<div class="msg err">${esc(err)}</div>` : "";
   },
-  async loadInterests() { try { this.interests = await api.interests(); } catch (e) { console.error(e); } this.render(); },
+  async loadInterests() { try { [this.interests, this.priv] = await Promise.all([api.interests(), api.privates()]); } catch (e) { console.error(e); } this.render(); },
   render() { if (!this.on) return; this.renderOffers(); this.renderClients(); this.renderGroups(); this.renderLives(); this.renderLiveSelect(); },
   handlesFor(id) { return this.interests.filter(i => i.offer_id === id); },
   renderLiveSelect() {
@@ -786,7 +789,7 @@ const Admin = {
     $("#adminOffers").innerHTML = list.length ? list.map(o => {
       const hs = this.handlesFor(o.id);
       return `<div class="row"><img src="${esc(img(o))}" alt="">
-        <div><h4>${esc(o.title)}</h4><div class="muted small">${[o.card_set, o.card_number].filter(Boolean).map(esc).join(" · ")} · ${esc(eur(o.price_eur))} · ${esc(yen(o.price_jpy))}</div>
+        <div><h4>${esc(o.title)}</h4><div class="muted small">${[o.card_set, o.card_number].filter(Boolean).map(esc).join(" · ")} · ${esc(eur(o.price_eur))} · ${esc(yen(this.priv[o.id]?.price_jpy))}</div>
           <div class="ctrl">
             <select class="field" data-status="${esc(o.id)}" aria-label="Statut">${Object.entries(STATUS_LABEL).map(([k, v]) => `<option value="${k}" ${k === o.status ? "selected" : ""}>${v}</option>`).join("")}</select>
             <select class="field" data-group="${esc(o.id)}" aria-label="Commande groupée">${opts(o.group_order_id)}</select>
@@ -846,7 +849,7 @@ const Admin = {
     this.editing = id; this.file = null;
     const p = await api.getPrivate(id).catch(() => ({}));
     $("#oTitle").value = o.title || ""; $("#oSet").value = o.card_set || ""; $("#oNum").value = o.card_number || "";
-    $("#oLang").value = o.language || ""; $("#oCond").value = o.condition || ""; $("#oJpy").value = o.price_jpy ?? "";
+    $("#oLang").value = o.language || ""; $("#oCond").value = o.condition || ""; $("#oJpy").value = p.price_jpy ?? "";
     $("#oEur").value = o.price_eur ?? ""; $("#offerImageUrl").value = o.image_url || ""; $("#offerPreview").src = img(o);
     this.renderLiveSelect(); $("#oLive").value = o.live_id || "";
     $("#oSource").value = p.source_url || ""; $("#oCost").value = p.cost_jpy ?? ""; $("#oNote").value = p.admin_note || "";
@@ -863,12 +866,12 @@ const Admin = {
       const pub = {
         title: $("#oTitle").value.trim(), card_set: $("#oSet").value.trim() || null, card_number: $("#oNum").value.trim() || null,
         language: $("#oLang").value.trim() || null, condition: $("#oCond").value || null,
-        price_jpy: num($("#oJpy").value), price_eur: num($("#oEur").value), image_url, live_id: $("#oLive").value || null
+        price_eur: num($("#oEur").value), image_url, live_id: $("#oLive").value || null
       };
-      const priv = { source_url: $("#oSource").value.trim() || null, cost_jpy: num($("#oCost").value), admin_note: $("#oNote").value.trim() || null };
+      const priv = { price_jpy: num($("#oJpy").value), source_url: $("#oSource").value.trim() || null, cost_jpy: num($("#oCost").value), admin_note: $("#oNote").value.trim() || null };
       await api.saveOffer(this.editing, pub, priv);
       toast(this.editing ? "Offre mise à jour" : "Offre publiée sur le mur ✓");
-      this.resetOfferForm(); await loadPublic();
+      this.resetOfferForm(); await loadPublic(); await this.loadInterests();
       $("#oTitle").focus();
     } catch (e) { console.error(e); $("#offerMsg").innerHTML = `<div class="msg err">${esc(e.message || "Erreur")}</div>`; }
     btn.disabled = false; btn.textContent = this.editing ? "Enregistrer" : "Publier sur le mur";
