@@ -121,7 +121,52 @@ section.view{padding:24px 0 60px}
 .b-sold{background:var(--red-soft);color:var(--red)}
 .b-expired{background:var(--off-soft);color:var(--off)}
 .offer .ph .badge{position:absolute;left:8px;top:8px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
-.offer .ph .psa{top:auto;bottom:8px;background:var(--gold);color:#fff;font-size:12px}
+.offer .ph .cond{top:auto;bottom:8px;font-size:11px;background:rgba(20,15,10,.72);color:#fff;backdrop-filter:blur(4px)}
+.offer .ph .cond.c-psa{background:var(--gold);color:#fff;font-size:12px}
+.offer .ph .cond.c-mint{background:#2f7d4f;color:#fff}
+.offer .ph .cond.c-good{background:#4b6a8a;color:#fff}
+.offer .ph .cond.c-played{background:#a86a10;color:#fff}
+.offer .ph .cond.c-other{background:#6f6860;color:#fff}
+.offer .ph .nimg{left:auto;right:8px;top:auto;bottom:8px;background:rgba(20,15,10,.72);color:#fff;text-transform:none}
+.offer .ph{cursor:zoom-in}
+.offer .ph:focus-visible{outline:3px solid var(--red);outline-offset:-3px}
+/* filtres */
+.filters{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:-6px 0 16px;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.filters label{display:grid;gap:3px;font-size:12px;font-weight:600;color:var(--muted)}
+.filters .field{min-height:36px;padding:6px 10px;font-size:14px;color:var(--ink)}
+.filters .price2{display:flex;gap:4px}
+.filters .actions{display:flex;align-items:end}
+#filterToggle{display:none}
+@media (max-width:900px){.filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){#filterToggle{display:inline-flex}.filters.collapsed{display:none}}
+/* galerie (lightbox) */
+dialog#galDlg{max-width:980px;width:calc(100% - 24px);background:#12100e;color:#f2ede6}
+.gal{display:grid;grid-template-columns:1fr 280px;gap:0}
+@media (max-width:760px){.gal{grid-template-columns:1fr}}
+.gal .stage{position:relative;background:#000;display:grid;place-items:center;height:min(78vh,680px);overflow:hidden;touch-action:pan-y}
+.gal .stage img{width:100%;height:100%;object-fit:contain}
+@media (max-width:760px){.gal .stage{height:58vh}}
+@media (max-width:480px){.offer .ph .new{top:34px}}
+.gal .nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:22px;cursor:pointer}
+.gal .nav:hover{background:rgba(255,255,255,.25)}
+.gal .prev{left:10px}.gal .next{right:10px}
+.gal .counter{position:absolute;left:12px;top:12px;background:rgba(0,0,0,.6);padding:3px 10px;border-radius:999px;font-size:13px}
+.gal .close{position:absolute;right:10px;top:10px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:18px;cursor:pointer}
+.gal .info{padding:18px;display:flex;flex-direction:column;gap:10px}
+.gal .info h3{margin:0;font-size:20px}
+.gal .strip{display:flex;gap:6px;flex-wrap:wrap}
+.gal .strip button{padding:0;border:2px solid transparent;border-radius:6px;overflow:hidden;width:52px;height:52px;cursor:pointer;background:none}
+.gal .strip button[aria-current="true"]{border-color:var(--red)}
+.gal .strip img{width:100%;height:100%;object-fit:cover}
+/* galerie admin */
+.gedit{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}
+.gedit .gi{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--off-soft)}
+.gedit .gi img{width:100%;height:100%;object-fit:cover}
+.gedit .gi.main{outline:2px solid var(--red);outline-offset:1px}
+.gedit .gi .tag{position:absolute;left:3px;top:3px;font-size:9px;font-weight:700;background:var(--red);color:#fff;padding:1px 5px;border-radius:999px}
+.gedit .gi .ops{position:absolute;inset:auto 0 0 0;display:flex;justify-content:space-between;background:rgba(0,0,0,.55)}
+.gedit .gi .ops button{border:0;background:none;color:#fff;font-size:13px;padding:3px 6px;cursor:pointer}
+.gedit .gi .ops button:disabled{opacity:.3}
 .offer .ph .new{left:auto;right:8px;background:var(--red);color:#fff}
 .offer .body{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1}
 .offer h3{margin:0;font-size:15px;line-height:1.25;font-weight:700}
@@ -261,7 +306,22 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
       <button class="chip" data-filter="taken" aria-pressed="false">Réservées et vendues</button>
       <button class="chip" data-filter="all" aria-pressed="false">Toutes</button>
       <input class="field" id="search" type="search" placeholder="Rechercher une carte, un set…" aria-label="Rechercher">
-      <select class="field" id="liveFilter" aria-label="Filtrer par live"><option value="">Tous les lives</option></select>
+      <button class="btn ghost sm" id="filterToggle" type="button" aria-expanded="false" aria-controls="filters">Filtres</button>
+    </div>
+    <div class="filters collapsed" id="filters">
+      <label>État
+        <select class="field" id="fCond">
+          <option value="">Tous les états</option>
+          <optgroup label="Brut"><option value="raw">Toutes les brutes</option><option>Mint</option><option>Near Mint</option><option>Excellent</option><option>Good</option><option>Played</option></optgroup>
+          <optgroup label="Gradée PSA"><option value="psa">Toutes les PSA</option><option>PSA 10</option><option>PSA 9</option><option>PSA 8</option><option>PSA 7</option><option>PSA 6</option><option>PSA 5</option><option>PSA 4</option><option>PSA 3</option><option>PSA 2</option><option>PSA 1</option></optgroup>
+          <optgroup label="Autres"><option>Inconnu</option><option>Divers</option></optgroup>
+        </select></label>
+      <label>Set<select class="field" id="fSet"><option value="">Tous les sets</option></select></label>
+      <label>Langue<select class="field" id="fLang"><option value="">Toutes</option></select></label>
+      <label>Live<select class="field" id="liveFilter" aria-label="Filtrer par live"><option value="">Tous les lives</option></select></label>
+      <label>Prix (€)<span class="price2"><input class="field" id="fMin" type="number" min="0" inputmode="decimal" placeholder="min"><input class="field" id="fMax" type="number" min="0" inputmode="decimal" placeholder="max"></span></label>
+      <label>Trier par<select class="field" id="fSort"><option value="new">Plus récentes</option><option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option><option value="name">Nom (A → Z)</option><option value="hot">Les plus demandées</option></select></label>
+      <div class="actions" style="grid-column:1/-1;justify-content:flex-end"><button class="btn ghost sm" type="button" id="fReset">Réinitialiser les filtres</button></div>
     </div>
     <div class="grid" id="wall"></div>
   </section>
@@ -313,12 +373,15 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
         <form class="panel" id="offerForm">
           <h3 style="margin:0 0 12px" id="offerFormTitle">Nouvelle offre</h3>
           <div class="formgrid">
-            <div class="full photo-drop">
-              <img id="offerPreview" alt="" src="">
-              <div style="flex:1;display:grid;gap:6px">
-                <label class="btn ghost sm" style="cursor:pointer">📷 Photo<input type="file" id="offerFile" accept="image/*" hidden></label>
-                <input class="field" id="offerImageUrl" placeholder="…ou URL de l'image" type="url">
+            <div class="full" style="display:grid;gap:8px">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="lab" style="display:inline">Photos</span><span class="hint" id="galCount">0 / 12</span></div>
+              <div class="gedit" id="galEdit"></div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <label class="btn ghost sm" style="cursor:pointer">📷 Ajouter des photos<input type="file" id="offerFile" accept="image/*" multiple hidden></label>
+                <input class="field" id="offerImageUrl" placeholder="…ou coller une URL d'image" type="url" style="flex:1;min-width:160px;min-height:32px;padding:4px 10px">
+                <button class="btn ghost sm" type="button" id="offerUrlAdd">Ajouter</button>
               </div>
+              <p class="hint">12 photos maximum. La première (◀ ▶ pour réordonner) est la photo principale du mur.</p>
             </div>
             <label class="lab full">Nom de la carte *<input class="field" id="oTitle" required placeholder="Pikachu ex SAR"></label>
             <label class="lab">Set<input class="field" id="oSet" placeholder="SV8a"></label>
@@ -326,7 +389,7 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
             <label class="lab">Langue<input class="field" id="oLang" value="JP"></label>
             <label class="lab">État
               <select class="field" id="oCond">
-                <option value="">—</option><optgroup label="Brut"><option>Mint</option><option>Near Mint</option><option>Excellent</option><option>Good</option><option>Played</option></optgroup><optgroup label="Gradée PSA"><option>PSA 10</option><option>PSA 9</option><option>PSA 8</option><option>PSA 7</option><option>PSA 6</option><option>PSA 5</option><option>PSA 4</option><option>PSA 3</option><option>PSA 2</option><option>PSA 1</option></optgroup>
+                <option value="">—</option><optgroup label="Brut"><option>Mint</option><option>Near Mint</option><option>Excellent</option><option>Good</option><option>Played</option></optgroup><optgroup label="Gradée PSA"><option>PSA 10</option><option>PSA 9</option><option>PSA 8</option><option>PSA 7</option><option>PSA 6</option><option>PSA 5</option><option>PSA 4</option><option>PSA 3</option><option>PSA 2</option><option>PSA 1</option></optgroup><optgroup label="Autres"><option>Inconnu</option><option>Divers</option></optgroup>
               </select>
             </label>
             <label class="lab">🔒 Prix Japon (¥)<input class="field" id="oJpy" type="number" min="0" inputmode="numeric"></label>
@@ -456,6 +519,19 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
   </form>
 </dialog>
 
+<dialog id="galDlg" aria-label="Galerie photo">
+  <div class="gal">
+    <div class="stage" id="galStage">
+      <img id="galImg" alt="">
+      <span class="counter" id="galCounter"></span>
+      <button class="nav prev" id="galPrev" aria-label="Photo précédente">‹</button>
+      <button class="nav next" id="galNext" aria-label="Photo suivante">›</button>
+      <button class="close" id="galClose" aria-label="Fermer">✕</button>
+    </div>
+    <div class="info" id="galInfo"></div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -499,13 +575,22 @@ function placeholder(title) {
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
 const img = o => o.image_url || placeholder(o.title);
+const imagesOf = o => { const a = Array.isArray(o.images) ? o.images.filter(Boolean) : []; return a.length ? a : (o.image_url ? [o.image_url] : []); };
+function condClass(c) {
+  if (!c) return "";
+  if (/^PSA \d+$/.test(c)) return "c-psa";
+  if (c === "Mint" || c === "Near Mint") return "c-mint";
+  if (c === "Excellent" || c === "Good") return "c-good";
+  if (c === "Played") return "c-played";
+  return "c-other";
+}
 
 /* =========================================================
    Accès aux données : Supabase, ou démo en mémoire
    ========================================================= */
 function makeSupabaseApi() {
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const OFFER_COLS = "id,title,card_set,card_number,language,condition,price_eur,image_url,status,live_id,group_order_id,created_at";
+  const OFFER_COLS = "id,title,card_set,card_number,language,condition,price_eur,image_url,images,status,live_id,group_order_id,created_at";
   const ok = ({ data, error }) => { if (error) throw error; return data; };
   return {
     demo: false,
@@ -575,12 +660,15 @@ function makeDemoApi() {
   const mk = (id, title, card_set, card_number, condition, jpy, eurv, status, live_id, group_order_id, ago) =>
     ({ id, title, card_set, card_number, language: "JP", condition, price_eur: eurv, image_url: "", status, live_id, group_order_id, created_at: new Date(now - ago).toISOString() });
   const offers = [
-    mk("o1", "Pikachu ex SAR", "SV8a", "232/187", "Near Mint", 14800, 112, "available", "l1", null, 2 * H),
+    { ...mk("o1", "Pikachu ex SAR", "SV8a", "232/187", "Near Mint", 14800, 112, "available", "l1", null, 2 * H), images: [placeholder("Pikachu recto"), placeholder("Pikachu verso"), placeholder("Pikachu coin"), placeholder("Pikachu bord")] },
     mk("o2", "Évoli ex SAR", "SV8a", "224/187", "Mint", 9800, 74, "available", "l1", null, 3 * H),
     mk("o3", "Dracaufeu ex SAR", "SV2a", "201/165", "PSA 10", 18500, 139, "reserved", "l1", "g2", 6 * D),
     mk("o4", "Mew ex UR", "SV2a", "208/165", "PSA 9", 4200, 32, "available", "l1", null, 6 * D),
     mk("o5", "Lillie's Clefairy ex SAR", "SV9", "130/100", "Near Mint", 12800, 96, "sold", "l1", "g2", 6 * D),
-    mk("o6", "Mimiqui AR", "SV8a", "198/187", "Mint", 1800, 14.5, "available", "l1", null, 6 * D)
+    mk("o6", "Mimiqui AR", "SV8a", "198/187", "Mint", 1800, 14.5, "available", "l1", null, 6 * D),
+    mk("o7", "Carte promo mystère", "Promo", "", "Inconnu", 3000, 25, "available", "l1", null, 6 * D),
+    { ...mk("o8", "Lot de 20 cartes communes", "", "", "Divers", 1000, 9, "available", "l1", null, 6 * D), language: "JP/EN" },
+    mk("o9", "Rayquaza V", "S7R", "076/067", "Played", 2500, 19, "available", "l1", null, 6 * D)
   ];
   const interests = [
     { id: "i1", offer_id: "o3", handle: "sacha.collec", note: "", created_at: new Date(now - 6 * D).toISOString() },
@@ -625,7 +713,7 @@ async function loadPublic() {
     const [offers, counts, lives, orders] = await Promise.all([api.offers(), api.counts(), api.lives(), api.orders()]);
     Object.assign(S, { offers, counts, lives, orders });
   } catch (e) { console.error(e); toast("Impossible de charger les données."); }
-  renderLiveFilter(); renderWall(); renderOrders(); renderLivebox();
+  renderLiveFilter(); renderFilterOptions(); renderWall(); renderOrders(); renderLivebox();
   if (Admin.on) Admin.render();
 }
 let reloadT;
@@ -638,16 +726,46 @@ function renderLiveFilter() {
   sel.value = past.some(l => l.id === cur) ? cur : "";
 }
 
+const F = { cond: "", set: "", lang: "", min: "", max: "", sort: "new" };
+const RAW = ["Mint", "Near Mint", "Excellent", "Good", "Played"];
+function renderFilterOptions() {
+  const fill = (sel, values, label) => {
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">${label}</option>` + values.map(v => `<option>${esc(v)}</option>`).join("");
+    sel.value = values.includes(cur) ? cur : "";
+  };
+  const uniq = k => [...new Set(S.offers.map(o => (o[k] || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
+  fill($("#fSet"), uniq("card_set"), "Tous les sets");
+  fill($("#fLang"), uniq("language"), "Toutes");
+}
+function activeFilterCount() {
+  return ["cond", "set", "lang", "min", "max"].filter(k => F[k] !== "").length + (S.live ? 1 : 0) + (F.sort !== "new" ? 1 : 0);
+}
 function renderWall() {
   const q = S.q.trim().toLowerCase();
+  const min = F.min === "" ? null : +F.min, max = F.max === "" ? null : +F.max;
   const list = S.offers.filter(o => {
     if (S.filter === "available" && o.status !== "available") return false;
     if (S.filter === "taken" && !["reserved", "sold"].includes(o.status)) return false;
     if (S.filter !== "all" && o.status === "expired") return false;
     if (S.live && o.live_id !== S.live) return false;
     if (q && !`${o.title} ${o.card_set} ${o.card_number}`.toLowerCase().includes(q)) return false;
+    if (F.cond === "raw" && !RAW.includes(o.condition)) return false;
+    if (F.cond === "psa" && !/^PSA \d+$/.test(o.condition || "")) return false;
+    if (F.cond && F.cond !== "raw" && F.cond !== "psa" && o.condition !== F.cond) return false;
+    if (F.set && (o.card_set || "").trim() !== F.set) return false;
+    if (F.lang && (o.language || "").trim() !== F.lang) return false;
+    if (min != null && !(o.price_eur >= min)) return false;
+    if (max != null && !(o.price_eur <= max)) return false;
     return true;
   });
+  const price = o => o.price_eur == null ? Infinity : +o.price_eur;
+  if (F.sort === "asc") list.sort((a, b) => price(a) - price(b));
+  if (F.sort === "desc") list.sort((a, b) => (b.price_eur ?? -1) - (a.price_eur ?? -1));
+  if (F.sort === "name") list.sort((a, b) => a.title.localeCompare(b.title, "fr"));
+  if (F.sort === "hot") list.sort((a, b) => (S.counts[b.id] || 0) - (S.counts[a.id] || 0));
+  const n = activeFilterCount();
+  $("#filterToggle").textContent = n ? `Filtres (${n})` : "Filtres";
   $("#wallCount").textContent = `${list.length} offre${list.length > 1 ? "s" : ""}`;
   if (!list.length) {
     $("#wall").innerHTML = `<div class="empty" style="grid-column:1/-1">${S.offers.length ? "Aucune offre ne correspond à ce filtre." : "Le mur est vide pour l'instant. Rendez-vous au prochain live !"}</div>`;
@@ -657,13 +775,14 @@ function renderWall() {
   $("#wall").innerHTML = list.map(o => {
     const n = S.counts[o.id] || 0, avail = o.status === "available";
     return `<article class="offer ${avail ? "" : "dim"}">
-      <div class="ph"><img loading="lazy" src="${esc(img(o))}" alt="${esc(o.title)}">
+      <div class="ph" data-gallery="${esc(o.id)}" role="button" tabindex="0" aria-label="Voir les photos de ${esc(o.title)}"><img loading="lazy" src="${esc(img(o))}" alt="${esc(o.title)}">
         <span class="badge b-${esc(o.status)}">${esc(STATUS_LABEL[o.status] || o.status)}</span>
         ${avail && new Date(o.created_at) > fresh ? `<span class="badge new">Nouveau</span>` : ""}
-        ${/^PSA \d+$/.test(o.condition || "") ? `<span class="badge psa">${esc(o.condition)}</span>` : ""}</div>
+        ${o.condition ? `<span class="badge cond ${condClass(o.condition)}">${esc(o.condition)}</span>` : ""}
+        ${imagesOf(o).length > 1 ? `<span class="badge nimg">📷 ${imagesOf(o).length}</span>` : ""}</div>
       <div class="body">
         <h3>${esc(o.title)}</h3>
-        <div class="meta">${[o.card_set, o.card_number, o.language, o.condition].filter(Boolean).map(esc).join(" · ")}</div>
+        <div class="meta">${[o.card_set, o.card_number, o.language].filter(Boolean).map(esc).join(" · ")}</div>
         <div class="price"><strong>${esc(eur(o.price_eur)) || "Prix en DM"}</strong></div>
         <div class="interest">${n ? `${n} personne${n > 1 ? "s" : ""} intéressée${n > 1 ? "s" : ""}` : "&nbsp;"}</div>
         ${avail ? `<button class="btn red" data-reserve="${esc(o.id)}">Je la veux</button>` : ""}
@@ -766,7 +885,7 @@ function openReserve(id) {
   const o = S.offers.find(x => x.id === id); if (!o) return;
   reserveId = id;
   $("#reserveHead").innerHTML = `<img src="${esc(img(o))}" alt=""><div><h3>${esc(o.title)}</h3>
-    <div class="muted small">${[o.card_set, o.card_number, o.condition].filter(Boolean).map(esc).join(" · ")}</div>
+    <div class="muted small">${[o.card_set, o.card_number, o.language, o.condition].filter(Boolean).map(esc).join(" · ")}</div>
     <div style="margin-top:6px"><strong style="font-size:18px">${esc(eur(o.price_eur)) || "Prix en DM"}</strong></div></div>`;
   $("#rHandle").value = store.get("jl_handle", "");
   $("#rNote").value = ""; $("#reserveMsg").innerHTML = "";
@@ -795,7 +914,53 @@ $("#reserveForm").addEventListener("submit", async e => {
     $("#reserveSubmit").disabled = false; scheduleReload();
   }
 });
-$("#wall").addEventListener("click", e => { const b = e.target.closest("[data-reserve]"); if (b) openReserve(b.dataset.reserve); });
+$("#wall").addEventListener("click", e => {
+  const b = e.target.closest("[data-reserve]"); if (b) return openReserve(b.dataset.reserve);
+  const g = e.target.closest("[data-gallery]"); if (g) openGallery(g.dataset.gallery);
+});
+$("#wall").addEventListener("keydown", e => {
+  const g = e.target.closest("[data-gallery]");
+  if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openGallery(g.dataset.gallery); }
+});
+
+/* ---------- Galerie photo ---------- */
+const galDlg = $("#galDlg"), G = { id: null, i: 0, imgs: [] };
+function openGallery(id, i = 0) {
+  const o = S.offers.find(x => x.id === id); if (!o) return;
+  G.id = id; G.imgs = imagesOf(o); if (!G.imgs.length) G.imgs = [placeholder(o.title)]; G.i = i;
+  const avail = o.status === "available";
+  $("#galInfo").innerHTML = `<h3>${esc(o.title)}</h3>
+    <div class="small" style="opacity:.75">${[o.card_set, o.card_number, o.language].filter(Boolean).map(esc).join(" · ")}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge b-${esc(o.status)}">${esc(STATUS_LABEL[o.status] || o.status)}</span>${o.condition ? `<span class="badge" style="background:rgba(255,255,255,.12);color:#fff">${esc(o.condition)}</span>` : ""}</div>
+    <div style="font-size:26px;font-weight:700">${esc(eur(o.price_eur)) || "Prix en DM"}</div>
+    ${G.imgs.length > 1 ? `<div class="strip">${G.imgs.map((u, k) => `<button data-k="${k}" aria-label="Photo ${k + 1}"><img src="${esc(u)}" alt="" loading="lazy"></button>`).join("")}</div>` : ""}
+    ${avail ? `<button class="btn red" id="galReserve" style="margin-top:auto">Je la veux</button>` : ""}`;
+  showGal(); if (!galDlg.open) galDlg.showModal();
+}
+function showGal() {
+  const n = G.imgs.length; G.i = (G.i + n) % n;
+  $("#galImg").src = G.imgs[G.i];
+  $("#galCounter").textContent = n > 1 ? `${G.i + 1} / ${n}` : "";
+  $("#galPrev").classList.toggle("hidden", n < 2); $("#galNext").classList.toggle("hidden", n < 2);
+  $$("#galInfo .strip button").forEach((b, k) => b.setAttribute("aria-current", k === G.i));
+}
+$("#galPrev").addEventListener("click", () => { G.i--; showGal(); });
+$("#galNext").addEventListener("click", () => { G.i++; showGal(); });
+$("#galClose").addEventListener("click", () => galDlg.close());
+galDlg.addEventListener("click", e => {
+  if (e.target === galDlg) return galDlg.close();
+  const t = e.target.closest(".strip button"); if (t) { G.i = +t.dataset.k; showGal(); }
+  if (e.target.closest("#galReserve")) { galDlg.close(); openReserve(G.id); }
+});
+galDlg.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") { G.i--; showGal(); } if (e.key === "ArrowRight") { G.i++; showGal(); }
+});
+let touchX = null;
+$("#galStage").addEventListener("touchstart", e => { touchX = e.touches[0].clientX; }, { passive: true });
+$("#galStage").addEventListener("touchend", e => {
+  if (touchX == null) return; const dx = e.changedTouches[0].clientX - touchX; touchX = null;
+  if (Math.abs(dx) > 40 && G.imgs.length > 1) { G.i += dx < 0 ? 1 : -1; showGal(); }
+});
 
 /* ---------- Suivi client ---------- */
 $("#trackForm").addEventListener("submit", async e => {
@@ -910,21 +1075,38 @@ const Admin = {
     const jpy = +$("#oJpy").value, rate = +$("#rate").value, mk = +$("#markup").value;
     if (jpy > 0 && rate > 0) $("#oEur").value = (Math.ceil(jpy * rate * (1 + mk / 100) * 2) / 2).toFixed(2);
   },
+  gallery: [],
+  renderGalEdit() {
+    const g = this.gallery;
+    $("#galCount").textContent = `${g.length} / 12`;
+    $("#galEdit").innerHTML = g.map((it, k) => `<div class="gi ${k === 0 ? "main" : ""}"><img src="${esc(it.preview || it.url)}" alt="">
+      ${k === 0 ? `<span class="tag">Principale</span>` : ""}
+      <div class="ops"><button type="button" data-gmove="${k}" data-d="-1" ${k === 0 ? "disabled" : ""} aria-label="Avancer">◀</button>
+      <button type="button" data-gdel="${k}" aria-label="Retirer">✕</button>
+      <button type="button" data-gmove="${k}" data-d="1" ${k === g.length - 1 ? "disabled" : ""} aria-label="Reculer">▶</button></div></div>`).join("")
+      || `<div class="gi" style="display:grid;place-items:center;color:var(--muted);font-size:12px">Aucune</div>`;
+  },
+  addToGallery(items) {
+    const room = 12 - this.gallery.length;
+    if (items.length > room) toast(`12 photos maximum : ${items.length - room} ignorée(s).`);
+    this.gallery.push(...items.slice(0, Math.max(0, room)));
+    this.renderGalEdit();
+  },
   resetOfferForm() {
-    this.editing = null; this.file = null;
+    this.editing = null; this.gallery = [];
     $("#offerForm").reset(); this.fillRate(); $("#oLang").value = "JP";
-    $("#offerPreview").src = placeholder("Photo");
+    this.renderGalEdit();
     $("#offerFormTitle").textContent = "Nouvelle offre"; $("#offerSubmit").textContent = "Publier sur le mur";
     $("#offerCancel").classList.add("hidden"); $("#offerMsg").innerHTML = "";
     this.renderLiveSelect();
   },
   async editOffer(id) {
     const o = S.offers.find(x => x.id === id); if (!o) return;
-    this.editing = id; this.file = null;
+    this.editing = id; this.gallery = imagesOf(o).map(url => ({ url }));
     const p = await api.getPrivate(id).catch(() => ({}));
     $("#oTitle").value = o.title || ""; $("#oSet").value = o.card_set || ""; $("#oNum").value = o.card_number || "";
     $("#oLang").value = o.language || ""; $("#oCond").value = o.condition || ""; $("#oJpy").value = p.price_jpy ?? "";
-    $("#oEur").value = o.price_eur ?? ""; $("#offerImageUrl").value = o.image_url || ""; $("#offerPreview").src = img(o);
+    $("#oEur").value = o.price_eur ?? ""; $("#offerImageUrl").value = ""; this.renderGalEdit();
     this.renderLiveSelect(); $("#oLive").value = o.live_id || "";
     $("#oSource").value = p.source_url || ""; $("#oCost").value = p.cost_jpy ?? ""; $("#oNote").value = p.admin_note || "";
     $("#offerFormTitle").textContent = "Modifier l'offre"; $("#offerSubmit").textContent = "Enregistrer";
@@ -934,13 +1116,22 @@ const Admin = {
   async submitOffer() {
     const btn = $("#offerSubmit"); btn.disabled = true; $("#offerMsg").innerHTML = "";
     try {
-      let image_url = $("#offerImageUrl").value.trim() || null;
-      if (this.file) { btn.textContent = "Envoi de la photo…"; image_url = await api.upload(this.file); }
+      const pending = $("#offerImageUrl").value.trim();
+      if (pending && this.gallery.length < 12) { this.gallery.push({ url: pending }); $("#offerImageUrl").value = ""; }
+      const toUpload = this.gallery.filter(it => it.file);
+      let done = 0;
+      for (const it of this.gallery) {
+        if (!it.file) continue;
+        btn.textContent = `Envoi des photos ${++done}/${toUpload.length}…`;
+        it.url = await api.upload(it.file); delete it.file;
+      }
+      const images = this.gallery.map(it => it.url).filter(Boolean).slice(0, 12);
+      const image_url = images[0] || null;
       const num = v => v === "" ? null : +v;
       const pub = {
         title: $("#oTitle").value.trim(), card_set: $("#oSet").value.trim() || null, card_number: $("#oNum").value.trim() || null,
         language: $("#oLang").value.trim() || null, condition: $("#oCond").value || null,
-        price_eur: num($("#oEur").value), image_url, live_id: $("#oLive").value || null
+        price_eur: num($("#oEur").value), image_url, images, live_id: $("#oLive").value || null
       };
       const priv = { price_jpy: num($("#oJpy").value), source_url: $("#oSource").value.trim() || null, cost_jpy: num($("#oCost").value), admin_note: $("#oNote").value.trim() || null };
       await api.saveOffer(this.editing, pub, priv);
@@ -967,10 +1158,19 @@ $$("[data-atab]").forEach(b => b.addEventListener("click", () => {
 $("#offerForm").addEventListener("submit", e => { e.preventDefault(); Admin.submitOffer(); });
 $("#offerCancel").addEventListener("click", () => Admin.resetOfferForm());
 $("#offerFile").addEventListener("change", e => {
-  const f = e.target.files[0]; if (!f) return;
-  Admin.file = f; $("#offerPreview").src = URL.createObjectURL(f); $("#offerImageUrl").value = "";
+  const files = [...e.target.files].filter(f => f.type.startsWith("image/"));
+  Admin.addToGallery(files.map(file => ({ file, preview: URL.createObjectURL(file) })));
+  e.target.value = "";
 });
-$("#offerImageUrl").addEventListener("input", e => { Admin.file = null; $("#offerPreview").src = e.target.value || placeholder("Photo"); });
+const addUrl = () => { const u = $("#offerImageUrl").value.trim(); if (!u) return; Admin.addToGallery([{ url: u }]); $("#offerImageUrl").value = ""; };
+$("#offerUrlAdd").addEventListener("click", addUrl);
+$("#offerImageUrl").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addUrl(); } });
+$("#galEdit").addEventListener("click", e => {
+  const mv = e.target.closest("[data-gmove]"), del = e.target.closest("[data-gdel]"), g = Admin.gallery;
+  if (mv) { const k = +mv.dataset.gmove, j = k + +mv.dataset.d; if (j >= 0 && j < g.length) [g[k], g[j]] = [g[j], g[k]]; }
+  if (del) g.splice(+del.dataset.gdel, 1);
+  Admin.renderGalEdit();
+});
 ["#oJpy", "#rate", "#markup"].forEach(s => $(s).addEventListener("input", () => {
   store.set("jl_rate", +$("#rate").value); store.set("jl_markup", +$("#markup").value); Admin.calcEur();
 }));
@@ -1131,6 +1331,18 @@ $$("[data-filter]").forEach(b => b.addEventListener("click", () => {
 }));
 $("#search").addEventListener("input", e => { S.q = e.target.value; renderWall(); });
 $("#liveFilter").addEventListener("change", e => { S.live = e.target.value; renderWall(); });
+[["#fCond", "cond"], ["#fSet", "set"], ["#fLang", "lang"], ["#fSort", "sort"]].forEach(([sel, k]) =>
+  $(sel).addEventListener("change", e => { F[k] = e.target.value; renderWall(); }));
+[["#fMin", "min"], ["#fMax", "max"]].forEach(([sel, k]) =>
+  $(sel).addEventListener("input", e => { F[k] = e.target.value; renderWall(); }));
+$("#fReset").addEventListener("click", () => {
+  Object.assign(F, { cond: "", set: "", lang: "", min: "", max: "", sort: "new" }); S.live = "";
+  ["#fCond", "#fSet", "#fLang", "#fMin", "#fMax", "#liveFilter"].forEach(s => { $(s).value = ""; }); $("#fSort").value = "new";
+  renderWall();
+});
+$("#filterToggle").addEventListener("click", () => {
+  const c = $("#filters").classList.toggle("collapsed"); $("#filterToggle").setAttribute("aria-expanded", !c);
+});
 window.addEventListener("hashchange", route);
 
 document.title = `${SHOP_NAME} · Offres en live`;
