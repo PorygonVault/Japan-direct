@@ -87,7 +87,14 @@ nav.tabs a[aria-current="page"]{background:var(--ink);color:var(--paper)}
 .onair i{width:9px;height:9px;border-radius:50%;background:#fff;animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 .nextlives{margin:12px 0 0;padding:12px 0 0;border-top:1px solid rgba(255,255,255,.12);list-style:none;font-size:13px;display:grid;gap:4px}
-.nextlives li{display:flex;justify-content:space-between;gap:10px;opacity:.8}
+.nextlives li{display:flex;justify-content:space-between;align-items:center;gap:10px;opacity:.85}
+.nextlives .bell{border:0;background:rgba(255,255,255,.12);color:inherit;border-radius:999px;padding:2px 9px;font-size:12px;cursor:pointer;white-space:nowrap}
+.nextlives .bell:hover{background:rgba(255,255,255,.22)}
+.livebtns{display:flex;gap:8px;flex-wrap:wrap}
+.rem{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.rem.sent{opacity:.6}
+.rem .who{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.rem .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer;text-decoration:none;background:var(--ink);color:var(--paper);min-height:42px}
 .btn.red{background:var(--red);color:var(--red-ink)}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
@@ -365,6 +372,7 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
         <button class="chip" data-atab="clients" aria-pressed="false">Réservations</button>
         <button class="chip" data-atab="groupes" aria-pressed="false">Commandes groupées</button>
         <button class="chip" data-atab="lives" aria-pressed="false">Lives</button>
+        <button class="chip" data-atab="rappels" aria-pressed="false">Rappels live</button>
         <button class="chip" data-atab="overlay" aria-pressed="false">Overlay stream</button>
       </div>
 
@@ -435,6 +443,24 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
           <button class="btn red" type="submit" style="margin-top:12px;width:100%">Créer</button>
         </form>
         <div class="rows" id="adminGroups"></div>
+      </div>
+
+      <!-- Rappels live -->
+      <div data-apane="rappels" class="hidden split">
+        <div class="panel">
+          <h3 style="margin:0 0 10px">Rappels avant un live</h3>
+          <label class="lab">Live<select class="field" id="remLive"></select></label>
+          <label class="lab" style="margin-top:12px">Message
+            <textarea class="field" id="remTpl" rows="5"></textarea></label>
+          <p class="hint" style="margin-top:6px">Remplacements automatiques : {pseudo} {live} {date} {heure} {lien}</p>
+          <button class="btn ghost sm" type="button" id="remTplReset" style="margin-top:8px">Message par défaut</button>
+          <p class="hint" style="margin-top:14px">« Envoyer » copie le message personnalisé et ouvre la conversation Instagram : colle-le puis envoie. La personne est ensuite marquée comme prévenue.</p>
+        </div>
+        <div>
+          <div class="toolbar" style="justify-content:space-between"><strong id="remStats"></strong>
+            <span style="display:flex;gap:6px"><button class="btn ghost sm" id="remCopyAll">Copier tous les @</button></span></div>
+          <div class="rows" id="remList"></div>
+        </div>
       </div>
 
       <!-- Overlay stream -->
@@ -515,6 +541,24 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
     <div class="mfoot">
       <button class="btn ghost" value="cancel" formnovalidate id="reserveCancel">Fermer</button>
       <button class="btn red" id="reserveSubmit" value="default">Je la veux</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="remindDlg">
+  <form method="dialog" id="remindForm">
+    <div class="mbody">
+      <h3 style="margin:0">🔔 Être prévenu du live</h3>
+      <div id="remindInfo" class="muted small"></div>
+      <label class="lab">Ton @instagram
+        <div class="at-input"><span>@</span><input class="field" id="remHandle" required autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="ton_pseudo" maxlength="31"></div>
+      </label>
+      <p class="hint">Je t'enverrai un message privé sur Instagram juste avant le début du live.</p>
+      <div id="remindMsg"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn ghost" value="cancel" formnovalidate id="remindCancel">Fermer</button>
+      <button class="btn red" id="remindSubmit" value="default">Me prévenir</button>
     </div>
   </form>
 </dialog>
@@ -612,7 +656,16 @@ function makeSupabaseApi() {
     isAdmin: async () => ok(await sb.rpc("is_admin")) === true,
     // admin
     interests: async () => ok(await sb.from("interests").select("*").order("created_at", { ascending: false }).limit(5000)),
-    privates: async () => Object.fromEntries(ok(await sb.from("offer_private").select("offer_id,price_jpy")).map(r => [r.offer_id, r])),
+    privates: async () => Object.fromEntries(ok(await sb.from("offer_private").select("offer_id,price_jpy,source_url")).map(r => [r.offer_id, r])),
+    async addReminder(live_id, handle) {
+      const { error } = await sb.from("live_reminders").insert({ live_id, handle });
+      if (error && error.code === "23505") return "dup";
+      if (error) throw error;
+      return "ok";
+    },
+    reminders: async () => ok(await sb.from("live_reminders").select("*").order("created_at")),
+    patchReminder: async (id, patch) => ok(await sb.from("live_reminders").update(patch).eq("id", id)),
+    deleteReminder: async id => ok(await sb.from("live_reminders").delete().eq("id", id)),
     async getPrivate(id) { return ok(await sb.from("offer_private").select("*").eq("offer_id", id).maybeSingle()) || {}; },
     async saveOffer(id, pub, priv) {
       let row;
@@ -675,6 +728,11 @@ function makeDemoApi() {
     { id: "i2", offer_id: "o5", handle: "sacha.collec", note: "", created_at: new Date(now - 6 * D).toISOString() },
     { id: "i3", offer_id: "o1", handle: "ondine_tcg", note: "", created_at: new Date(now - H).toISOString() }
   ];
+  const reminders = [
+    { id: "r1", live_id: "l2", handle: "sacha.collec", notified_at: null, created_at: new Date(now - D).toISOString() },
+    { id: "r2", live_id: "l2", handle: "ondine_tcg", notified_at: null, created_at: new Date(now - H).toISOString() },
+    { id: "r3", live_id: "l2", handle: "pierre.arene", notified_at: new Date(now - 60e3).toISOString(), created_at: new Date(now - H).toISOString() }
+  ];
   return {
     demo: true,
     offers: async () => offers.slice().sort((a, b) => b.created_at.localeCompare(a.created_at)),
@@ -692,6 +750,13 @@ function makeDemoApi() {
         return { offer_id: o.id, title: o.title, card_set: o.card_set, card_number: o.card_number, image_url: o.image_url, price_eur: o.price_eur, status: o.status, interested_at: i.created_at, group_order_id: g?.id || null, group_name: g?.name || null, starts_on: g?.starts_on || null, ends_on: g?.ends_on || null, step: g?.step ?? null, step_dates: g?.step_dates || null, tracking: g?.tracking || null };
       });
     },
+    async addReminder(live_id, handle) {
+      if (reminders.some(r => r.live_id === live_id && r.handle === handle)) return "dup";
+      reminders.push({ id: "r" + Math.random(), live_id, handle, notified_at: null, created_at: new Date().toISOString() }); return "ok";
+    },
+    reminders: async () => reminders.slice(),
+    async patchReminder(id, patch) { Object.assign(reminders.find(r => r.id === id) || {}, patch); },
+    async deleteReminder(id) { const k = reminders.findIndex(r => r.id === id); if (k >= 0) reminders.splice(k, 1); },
     async session() { return null; },
     async signIn() { throw new Error("L'espace admin nécessite la configuration Supabase."); },
     async signOut() {},
@@ -853,18 +918,19 @@ function renderLivebox() {
   const box = $("#livebox");
   if (key !== lastLiveKey) {
     lastLiveKey = key;
-    const laterHtml = later.length ? `<ul class="nextlives">${later.map(l => `<li><span>${esc(l.title)}</span><span>${esc(fmtDate(l.starts_at))}</span></li>`).join("")}</ul>` : "";
+    const laterHtml = later.length ? `<ul class="nextlives">${later.map(l => `<li><span>${esc(l.title)}<br><small style="opacity:.8">${esc(fmtDate(l.starts_at))}</small></span><button class="bell" data-remind="${esc(l.id)}" aria-label="Me prévenir pour ${esc(l.title)}">🔔 Préviens-moi</button></li>`).join("")}</ul>` : "";
     if (onAir) {
       box.innerHTML = `<span class="onair"><i></i>EN DIRECT</span>
         <div class="ltitle" style="margin-top:12px">${esc(onAir.title)}</div>
         <div class="ldate">Dis-moi en commentaire les cartes que tu cherches.</div>
         <p style="margin:16px 0 0"><a class="btn red" href="${esc(igUrl(onAir))}" target="_blank" rel="noopener">Rejoindre le live</a></p>
-        ${next ? `<ul class="nextlives"><li><span>Ensuite : ${esc(next.title)}</span><span>${esc(fmtDate(next.starts_at))}</span></li></ul>` : ""}`;
+        ${next ? `<ul class="nextlives"><li><span>Ensuite : ${esc(next.title)}<br><small style="opacity:.8">${esc(fmtDate(next.starts_at))}</small></span><button class="bell" data-remind="${esc(next.id)}">🔔 Préviens-moi</button></li></ul>` : ""}`;
     } else if (next) {
       box.innerHTML = `<div class="label">Prochain live Instagram</div>
         <div class="ltitle">${esc(next.title)}</div><div class="ldate">${esc(fmtDate(next.starts_at))}</div>
         <div class="count" id="count">${["jours", "heures", "min", "sec"].map(u => `<div><strong>--</strong><span>${u}</span></div>`).join("")}</div>
-        <a class="btn light" href="${esc(igUrl(next))}" target="_blank" rel="noopener">Suivre sur Instagram</a>${laterHtml}`;
+        <div class="livebtns"><button class="btn red" data-remind="${esc(next.id)}">🔔 Préviens-moi</button>
+        <a class="btn light" href="${esc(igUrl(next))}" target="_blank" rel="noopener">Suivre sur Instagram</a></div>${laterHtml}`;
     } else {
       box.innerHTML = `<div class="label">Prochain live</div><div class="ltitle">Bientôt annoncé</div>
         <div class="ldate">Abonne-toi pour être prévenu.</div>
@@ -998,7 +1064,7 @@ const Admin = {
     if (!ok) { await api.signOut(); return this.showLogin("Ce compte n'est pas administrateur (voir la dernière étape du script SQL)."); }
     this.on = true;
     $("#loginBox").classList.add("hidden"); $("#adminBox").classList.remove("hidden"); $("#logoutBtn").classList.remove("hidden");
-    if (!this.unsub) this.unsub = api.subscribe(["interests"], () => this.loadInterests());
+    if (!this.unsub) this.unsub = api.subscribe(["interests", "live_reminders"], () => this.loadInterests());
     this.fillRate(); this.resetOfferForm();
     await this.loadInterests();
   },
@@ -1007,8 +1073,40 @@ const Admin = {
     $("#loginBox").classList.remove("hidden"); $("#adminBox").classList.add("hidden"); $("#logoutBtn").classList.add("hidden");
     $("#loginMsg").innerHTML = err ? `<div class="msg err">${esc(err)}</div>` : "";
   },
-  async loadInterests() { try { [this.interests, this.priv] = await Promise.all([api.interests(), api.privates()]); } catch (e) { console.error(e); } this.render(); },
-  render() { if (!this.on) return; if (editingField()) { this.pendingRender = true; return; } this.pendingRender = false; this.renderOffers(); this.renderClients(); this.renderGroups(); this.renderLives(); this.renderLiveSelect(); },
+  reminders: [],
+  async loadInterests() { try { [this.interests, this.priv, this.reminders] = await Promise.all([api.interests(), api.privates(), api.reminders()]); } catch (e) { console.error(e); } this.render(); },
+  render() { if (!this.on) return; if (editingField()) { this.pendingRender = true; return; } this.pendingRender = false; this.renderOffers(); this.renderClients(); this.renderGroups(); this.renderLives(); this.renderLiveSelect(); this.renderReminders(); },
+  remLiveDefault() {
+    const t = Date.now(), up = S.lives.filter(l => +new Date(l.starts_at) + (l.duration_min || 90) * 60e3 > t);
+    return (up[0] || S.lives[S.lives.length - 1] || {}).id || "";
+  },
+  renderReminders() {
+    const sel = $("#remLive"), cur = sel.value;
+    const counts = this.reminders.reduce((m, r) => (m[r.live_id] = (m[r.live_id] || 0) + 1, m), {});
+    const lives = S.lives.slice().reverse();
+    sel.innerHTML = lives.map(l => `<option value="${esc(l.id)}">${esc(fmtDate(l.starts_at))} · ${esc(l.title)} (${counts[l.id] || 0})</option>`).join("") || `<option value="">Aucun live programmé</option>`;
+    sel.value = lives.some(l => l.id === cur) ? cur : this.remLiveDefault();
+    if (!$("#remTpl").value) $("#remTpl").value = store.get("jl_remtpl", REM_TPL);
+    const list = this.reminders.filter(r => r.live_id === sel.value);
+    const sent = list.filter(r => r.notified_at).length;
+    $("#remStats").textContent = list.length ? `${sent} / ${list.length} prévenu${list.length > 1 ? "s" : ""}` : "";
+    $("#remList").innerHTML = list.length ? list.map(r => `<div class="rem ${r.notified_at ? "sent" : ""}">
+        <div class="who"><strong>@${esc(r.handle)}</strong>${r.notified_at ? `<span class="badge b-available">✓ Prévenu</span>` : ""}</div>
+        <div class="acts">
+          <a class="btn red sm" href="https://ig.me/m/${esc(r.handle)}" target="_blank" rel="noopener" data-remsend="${esc(r.id)}">Envoyer</a>
+          <button class="btn ghost sm" data-remtoggle="${esc(r.id)}">${r.notified_at ? "Annuler" : "Marquer prévenu"}</button>
+          <button class="btn ghost sm" data-remdel="${esc(r.id)}" aria-label="Retirer">✕</button>
+        </div></div>`).join("") : `<div class="empty">Personne n'est encore inscrit pour ce live.</div>`;
+  },
+  remMessage(r) {
+    const l = S.lives.find(x => x.id === r.live_id) || {};
+    const d = l.starts_at ? new Date(l.starts_at) : null;
+    return ($("#remTpl").value || REM_TPL)
+      .replaceAll("{pseudo}", r.handle).replaceAll("{live}", l.title || "")
+      .replaceAll("{date}", d ? new Intl.DateTimeFormat("fr-BE", { weekday: "long", day: "numeric", month: "long" }).format(d) : "")
+      .replaceAll("{heure}", d ? new Intl.DateTimeFormat("fr-BE", { hour: "2-digit", minute: "2-digit" }).format(d) : "")
+      .replaceAll("{lien}", location.href.replace(/#.*$/, "") + "#mur");
+  },
   handlesFor(id) { return this.interests.filter(i => i.offer_id === id); },
   renderLiveSelect() {
     const sel = $("#oLive"), cur = sel.value;
@@ -1031,7 +1129,7 @@ const Admin = {
           </div>
           ${hs.length ? `<div class="handles">${hs.map(i => `<a href="https://ig.me/m/${esc(i.handle)}" target="_blank" rel="noopener" title="${esc(i.note || "")}">@${esc(i.handle)}${i.note ? " 💬" : ""}</a>`).join("")}</div>` : ""}
         </div>
-        <div class="acts"><button class="btn ghost sm" data-edit="${esc(o.id)}">Modifier</button><button class="btn ghost sm" data-del="${esc(o.id)}">Suppr.</button></div></div>`;
+        <div class="acts">${this.priv[o.id]?.source_url ? `<a class="btn ghost sm" href="${esc(this.priv[o.id].source_url)}" target="_blank" rel="noopener noreferrer" title="Vérifier que l'annonce japonaise est toujours disponible">🔗 Annonce</a>` : `<span class="hint" title="Ajoute le lien via Modifier">Pas de lien</span>`}<button class="btn ghost sm" data-edit="${esc(o.id)}">Modifier</button><button class="btn ghost sm" data-del="${esc(o.id)}">Suppr.</button></div></div>`;
     }).join("") : `<div class="empty">Aucune offre.</div>`;
   },
   renderClients() {
@@ -1260,6 +1358,65 @@ $("#liveForm").addEventListener("submit", e => {
 $("#adminLives").addEventListener("click", e => {
   const d = e.target.closest("[data-dellive]");
   if (d && confirm("Supprimer ce live ?")) Admin.act(() => api.deleteLive(d.dataset.dellive), "Live supprimé");
+});
+
+/* ---------- Rappels live : côté public ---------- */
+const REM_TPL = "Salut @{pseudo} ! 🔴 Le live « {live} » commence à {heure} sur Instagram. Viens me dire quelles cartes tu cherches, les offres arriveront ici : {lien}";
+const remDlg = $("#remindDlg");
+let remLiveId = null;
+$("#livebox").addEventListener("click", e => {
+  const b = e.target.closest("[data-remind]"); if (!b) return;
+  const l = S.lives.find(x => x.id === b.dataset.remind); if (!l) return;
+  remLiveId = l.id;
+  $("#remindInfo").textContent = `${l.title} · ${fmtDate(l.starts_at)}`;
+  $("#remHandle").value = store.get("jl_handle", ""); $("#remindMsg").innerHTML = "";
+  $("#remindSubmit").classList.remove("hidden"); $("#remindSubmit").disabled = false; $("#remindCancel").textContent = "Fermer";
+  remDlg.showModal(); if (!$("#remHandle").value) $("#remHandle").focus();
+});
+$("#remindForm").addEventListener("submit", async e => {
+  if (e.submitter && e.submitter.value === "cancel") return;
+  e.preventDefault();
+  const h = normHandle($("#remHandle").value), msg = $("#remindMsg");
+  if (!validHandle(h)) { msg.innerHTML = `<div class="msg err">Ce @ ne semble pas valide (lettres, chiffres, points et _ uniquement).</div>`; return; }
+  $("#remindSubmit").disabled = true;
+  try {
+    const r = await api.addReminder(remLiveId, h);
+    store.set("jl_handle", h);
+    msg.innerHTML = `<div class="msg ok">${r === "dup" ? `Tu es déjà inscrit, @${esc(h)} 👍` : `C'est noté, @${esc(h)} ! Je t'écris en DM juste avant le live.`}</div>`;
+    $("#remindSubmit").classList.add("hidden"); $("#remindCancel").textContent = "OK";
+  } catch (err) {
+    console.error(err);
+    msg.innerHTML = `<div class="msg err">Inscription impossible : le live a peut-être déjà commencé.</div>`;
+    $("#remindSubmit").disabled = false;
+  }
+});
+
+/* ---------- Rappels live : côté admin ---------- */
+$("#remLive").addEventListener("change", () => Admin.renderReminders());
+$("#remTpl").addEventListener("input", e => store.set("jl_remtpl", e.target.value));
+$("#remTplReset").addEventListener("click", () => { $("#remTpl").value = REM_TPL; store.set("jl_remtpl", REM_TPL); });
+$("#remList").addEventListener("click", async e => {
+  const snd = e.target.closest("[data-remsend]"), tg = e.target.closest("[data-remtoggle]"), del = e.target.closest("[data-remdel]");
+  if (snd) {
+    const r = Admin.reminders.find(x => x.id === snd.dataset.remsend); if (!r) return;
+    try { await navigator.clipboard.writeText(Admin.remMessage(r)); toast("Message copié : colle-le dans la conversation"); }
+    catch { prompt("Copie ce message :", Admin.remMessage(r)); }
+    if (!r.notified_at) { r.notified_at = new Date().toISOString(); Admin.renderReminders(); api.patchReminder(r.id, { notified_at: r.notified_at }).catch(err => { console.error(err); toast("Statut non enregistré"); }); }
+  }
+  if (tg) {
+    const r = Admin.reminders.find(x => x.id === tg.dataset.remtoggle); if (!r) return;
+    r.notified_at = r.notified_at ? null : new Date().toISOString(); Admin.renderReminders();
+    Admin.act(() => api.patchReminder(r.id, { notified_at: r.notified_at }));
+  }
+  if (del && confirm("Retirer cette inscription ?")) {
+    Admin.reminders = Admin.reminders.filter(x => x.id !== del.dataset.remdel); Admin.renderReminders();
+    Admin.act(() => api.deleteReminder(del.dataset.remdel), "Inscription retirée");
+  }
+});
+$("#remCopyAll").addEventListener("click", async () => {
+  const hs = Admin.reminders.filter(r => r.live_id === $("#remLive").value).map(r => "@" + r.handle).join(" ");
+  if (!hs) return toast("Aucun inscrit pour ce live.");
+  try { await navigator.clipboard.writeText(hs); toast("@ copiés"); } catch { prompt("Copie la liste :", hs); }
 });
 
 /* ---------- Générateur d'overlay ---------- */
