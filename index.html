@@ -262,6 +262,25 @@ label.lab .field{font-weight:400}
 .ordbtns{display:inline-flex;gap:2px}.ordbtns .btn{min-height:28px;padding:2px 8px}
 .field.dirty{border-color:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
 .hint{font-size:12px;color:var(--muted);margin:0}
+/* FAQ */
+.faq-wrap{max-width:780px;margin:0 auto}
+.faq{display:grid;gap:10px}
+.faq details{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;transition:box-shadow .2s}
+.faq details[open]{box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--red) 35%,var(--line))}
+.faq summary{list-style:none;cursor:pointer;padding:16px 52px 16px 18px;font-weight:700;font-size:16px;position:relative;font-family:"Zen Kaku Gothic New",Inter,sans-serif}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"";position:absolute;right:20px;top:50%;width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:translateY(-70%) rotate(45deg);transition:transform .2s}
+.faq details[open] summary::after{transform:translateY(-30%) rotate(-135deg);border-color:var(--red)}
+.faq summary:hover{color:var(--red)}
+.faq summary:focus-visible{outline:2px solid var(--red);outline-offset:-2px}
+.faq .ans{padding:0 18px 16px;color:var(--ink)}
+.faq .ans p{margin:0 0 10px}
+.faq .ans p:last-child{margin:0}
+.kilo{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.kilo li{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+.kilo strong{display:block;font-size:22px;color:var(--red)}
+.kilo span{font-size:13px;color:var(--muted)}
+.faq-cta{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;padding:16px 18px;background:var(--card);border:1px dashed var(--line);border-radius:var(--radius)}
 footer.site{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--muted);font-size:13px}
 footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(120px);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:10px;font-weight:500;transition:transform .25s;z-index:50;max-width:calc(100% - 32px)}
@@ -281,6 +300,7 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
       <a href="#mur" data-view="mur">Le mur</a>
       <a href="#commandes" data-view="commandes">Commandes groupées</a>
       <a href="#suivi" data-view="suivi">Suivre ma commande</a>
+      <a href="#faq" data-view="faq">FAQ</a>
     </nav>
   </div>
 </header>
@@ -351,6 +371,56 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
       <button class="btn red" type="submit">Voir</button>
     </form>
     <div id="trackResult"></div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="view hidden" id="view-faq">
+    <div class="faq-wrap">
+      <div class="sechead"><h2>Questions fréquentes</h2></div>
+      <p class="muted" style="margin:0 0 20px">Tout ce qu'il faut savoir avant de réserver une carte venue du Japon.</p>
+      <div class="faq" id="faqList">
+        <details>
+          <summary>Comment les cartes sont-elles choisies ?</summary>
+          <div class="ans"><p>Les cartes sont choisies en fonction de leur attrait ou de leur popularité. Nous privilégierons toujours les cartes qui nous permettent de vous proposer un prix ultra compétitif (le prix le plus bas, ou mieux) tout en prenant notre commission.</p></div>
+        </details>
+        <details>
+          <summary>Comment fonctionne le paiement ?</summary>
+          <div class="ans">
+            <p>Tout se passe en privé sur Instagram. Nous demandons un prépaiement de la carte via PayPal au moment de la réservation. Cet argent reste bloqué sur notre compte PayPal jusqu'à l'arrivée de la carte à l'entrepôt, au Japon.</p>
+            <p>Si la carte correspond bien à l'annonce, l'argent sert à payer la carte. En cas de souci, nous tenterons de le régler, et si un problème survient sur votre commande, vous serez remboursé.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Dois-je payer les frais d'import de ce que je commande ?</summary>
+          <div class="ans"><p>Non, les frais d'import sont compris dans le total payé.</p></div>
+        </details>
+        <details>
+          <summary>Dois-je payer les frais de port internationaux de ma commande ?</summary>
+          <div class="ans"><p>Oui, mais uniquement via un forfait de <strong>5 € pour le premier kilo</strong>. Si la commande approche du poids limite, nous verrons avec vous pour un règlement plus important (mais toujours avantageux) des frais de port.</p></div>
+        </details>
+        <details>
+          <summary>À quoi correspond 1 kilo ?</summary>
+          <div class="ans">
+            <p>Environ :</p>
+            <ul class="kilo">
+              <li><strong>600</strong><span>cartes à l'unité</span></li>
+              <li><strong>25</strong><span>cartes PSA</span></li>
+              <li><strong>15</strong><span>cartes Beckett</span></li>
+              <li><strong>9</strong><span>cartes ARS</span></li>
+              <li><strong>4</strong><span>displays</span></li>
+            </ul>
+          </div>
+        </details>
+        <details>
+          <summary>Je n'ai pas confiance en ce service. Quelles sont les garanties ?</summary>
+          <div class="ans"><p>Nous sommes des professionnels de l'import : nous avons une société spécialisée avec numéro de TVA, et plus de 4 000 envois réalisés en moins de 5 ans. Nous n'avons donc aucune raison d'arnaquer qui que ce soit, cela ruinerait notre réputation.</p></div>
+        </details>
+      </div>
+      <div class="faq-cta">
+        <div><strong>Une autre question ?</strong><div class="muted small">Écris-moi directement sur Instagram, je réponds en privé.</div></div>
+        <a class="btn red" id="faqIg" href="#" target="_blank" rel="noopener">Me contacter</a>
+      </div>
+    </div>
   </section>
 
   <!-- ADMIN -->
@@ -522,7 +592,7 @@ footer.site .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:
 <footer class="site">
   <div class="wrap">
     <span>Prix affichés en euros, estimés à partir du prix japonais. Réserver ne vaut pas paiement : je te contacte en DM pour confirmer.</span>
-    <span><a id="igLink" href="#" target="_blank" rel="noopener">Instagram</a> · <a href="#admin">Admin</a></span>
+    <span><a href="#faq">FAQ</a> · <a id="igLink" href="#" target="_blank" rel="noopener">Instagram</a> · <a href="#admin">Admin</a></span>
   </div>
 </footer>
 
@@ -1476,10 +1546,11 @@ window.addEventListener("resize", () => Overlay.fit());
    ========================================================= */
 function route() {
   const v = (location.hash || "#mur").slice(1);
-  const view = ["mur", "commandes", "suivi", "admin"].includes(v) ? v : "mur";
+  const view = ["mur", "commandes", "suivi", "faq", "admin"].includes(v) ? v : "mur";
   $$("section.view").forEach(s => s.classList.toggle("hidden", s.id !== "view-" + view));
   $$("nav.tabs a").forEach(a => a.dataset.view === view ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
-  $("#hero").classList.toggle("hidden", view === "admin");
+  $("#hero").classList.toggle("hidden", view === "admin" || view === "faq");
+  if (view === "faq") window.scrollTo(0, 0);
   if (view === "admin" && !Admin.on) Admin.enter();
   if (view === "suivi" && !$("#trackHandle").value) $("#trackHandle").value = store.get("jl_handle", "");
 }
@@ -1505,6 +1576,7 @@ window.addEventListener("hashchange", route);
 document.title = `${SHOP_NAME} · Offres en live`;
 $("#shopName").textContent = SHOP_NAME;
 $("#igLink").href = `https://instagram.com/${INSTAGRAM_HANDLE}`;
+$("#faqIg").href = `https://ig.me/m/${INSTAGRAM_HANDLE}`;
 $("#igLink").textContent = "@" + INSTAGRAM_HANDLE;
 if (api.demo) $("#demoBanner").classList.remove("hidden");
 
